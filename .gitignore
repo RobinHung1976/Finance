@@ -1,0 +1,12 @@
+ledger-backend/venv/
+ledger-backend/__pycache__/
+ledger-backend/**/__pycache__/
+*.pyc
+
+ledger-frontend/node_modules/
+ledger-frontend/dist/
+
+ledger-backend/.env
+ledger-frontend/.env.production
+
+.DS_Store
