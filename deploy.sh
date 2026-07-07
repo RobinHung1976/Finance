@@ -37,7 +37,6 @@ npm install
 npm run build
 
 mkdir -p "$WEB_ROOT"
-mkdir -p "$WEB_ROOT"
 rm -rf "${WEB_ROOT:?}"/*
 cp -r dist/* "$WEB_ROOT"/
 cd ..
