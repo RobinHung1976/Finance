@@ -4,9 +4,8 @@ import Chart from 'chart.js/auto'
 import { fetchCategoryBreakdown } from '@/api/ledger'
 import type { CategoryBreakdownOut, EntryType } from '@/types/ledger'
 
-const props = withDefaults(defineProps<{ type?: EntryType; months?: number }>(), {
+const props = withDefaults(defineProps<{ type?: EntryType; startDate: string; endDate: string }>(), {
   type: 'expense',
-  months: 1,
 })
 
 const breadcrumb = ref<{ id: string; name: string }[]>([])
@@ -32,7 +31,7 @@ async function loadAndRender() {
   errorMsg.value = ''
   try {
     // rollup 固定 true:UI 不再提供切換,子分類一律捲到頂層
-    data.value = await fetchCategoryBreakdown(props.type, props.months, true, currentParentId())
+    data.value = await fetchCategoryBreakdown(props.type, props.startDate, props.endDate, currentParentId())
     await nextTick()
     requestAnimationFrame(renderChart) // 等瀏覽器完成 layout,避免 canvas 量到 0x0
   } catch {
@@ -100,7 +99,7 @@ function renderChart() {
 
 onMounted(loadAndRender)
 onBeforeUnmount(() => chartInstance?.destroy())
-watch(() => [props.type, props.months], () => {
+watch(() => [props.type, props.startDate, props.endDate], () => {
   breadcrumb.value = []
   loadAndRender()
 })

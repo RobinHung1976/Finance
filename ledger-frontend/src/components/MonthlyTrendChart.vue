@@ -4,7 +4,7 @@ import Chart from 'chart.js/auto'
 import { fetchMonthlyTrend } from '@/api/ledger'
 import type { MonthlyTrendOut } from '@/types/ledger'
 
-const props = withDefaults(defineProps<{ months?: number }>(), { months: 12 })
+const props = defineProps<{ startDate: string; endDate: string }>()
 
 const loading = ref(true)
 const error = ref<string | null>(null)
@@ -74,7 +74,7 @@ async function loadData() {
   loading.value = true
   error.value = null
   try {
-    data.value = await fetchMonthlyTrend(props.months)
+    data.value = await fetchMonthlyTrend(props.startDate, props.endDate)
     await nextTick()
     requestAnimationFrame(renderChart) // 等瀏覽器完成 layout,避免 canvas 量到 0x0
   } catch (e) {
@@ -85,7 +85,7 @@ async function loadData() {
   }
 }
 
-watch(() => props.months, loadData)
+watch(() => [props.startDate, props.endDate], loadData)
 
 onMounted(loadData)
 onBeforeUnmount(() => chartInstance?.destroy())

@@ -56,19 +56,23 @@ export function deleteTransaction(id: string) {
   return apiClient.delete(`/transactions/${id}`)
 }
 
-export function fetchMonthlyTrend(months = 12) {
-  return apiClient.get<MonthlyTrendOut>('/stats/monthly-trend', { params: { months } }).then((r) => r.data)
+export function fetchMonthlyTrend(startDate?: string, endDate?: string) {
+  return apiClient
+    .get<MonthlyTrendOut>('/stats/monthly-trend', {
+      params: { start_date: startDate, end_date: endDate },
+    })
+    .then((r) => r.data)
 }
 
 export function fetchCategoryBreakdown(
   type: EntryType = 'expense',
-  months = 1,
-  rollup = true,
+  startDate?: string,
+  endDate?: string,
   parentId: string | null = null,
 ) {
   return apiClient
     .get<CategoryBreakdownOut>('/stats/category-breakdown', {
-      params: { type, months, rollup, parent_id: parentId },
+      params: { type, start_date: startDate, end_date: endDate, parent_id: parentId },
     })
     .then((r) => r.data)
 }
