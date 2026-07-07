@@ -106,6 +106,8 @@ _CATEGORY_BREAKDOWN_ROLLUP_SQL = text("""
 """)
 
 _CATEGORY_BREAKDOWN_LEAF_SQL = text("""
+    -- leaf 模式:忽略階層,直接依交易實際使用的分類分組(不套 parent_id 過濾,
+    -- 因為交易通常記在子分類上,頂層分類本身可能無直接交易)
     SELECT c.id AS category_id, c.name AS category_name,
            COALESCE(SUM(t.amount), 0) AS amount,
            EXISTS (
@@ -115,7 +117,6 @@ _CATEGORY_BREAKDOWN_LEAF_SQL = text("""
     FROM categories c
     JOIN transactions t ON t.category_id = c.id
     WHERE c.household_id = :household_id
-      AND c.parent_id IS NOT DISTINCT FROM :root_parent_id
       AND t.household_id = :household_id
       AND t.type = :entry_type
       AND t.date >= :start_date

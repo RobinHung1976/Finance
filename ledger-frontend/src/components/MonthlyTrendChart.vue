@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
 import { fetchMonthlyTrend } from '@/api/ledger'
 import type { MonthlyTrendOut } from '@/types/ledger'
@@ -75,6 +75,7 @@ async function loadData() {
   error.value = null
   try {
     data.value = await fetchMonthlyTrend(props.months)
+    await nextTick() // 等 v-else chart-wrap 掛載後 canvasRef 才存在
     renderChart()
   } catch (e) {
     error.value = '統計資料載入失敗,請稍後再試'
