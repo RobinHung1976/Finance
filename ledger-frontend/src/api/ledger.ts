@@ -8,6 +8,8 @@ import type {
   TransactionCreatePayload,
   TransactionFilters,
   MonthlyTrendOut,
+  CategoryBreakdownOut,
+  EntryType,
 } from '@/types/ledger'
 
 // ---------- Accounts ----------
@@ -42,9 +44,7 @@ export function deleteCategory(id: string) {
 
 // ---------- Transactions ----------
 export function fetchTransactions(filters: TransactionFilters = {}) {
-  return apiClient
-    .get<TransactionOut[]>('/transactions', { params: filters })
-    .then((r) => r.data)
+  return apiClient.get<TransactionOut[]>('/transactions', { params: filters }).then((r) => r.data)
 }
 
 export function createTransaction(payload: TransactionCreatePayload) {
@@ -61,7 +61,11 @@ export function deleteTransaction(id: string) {
 
 // ---------- Stats ----------
 export function fetchMonthlyTrend(months = 12) {
+  return apiClient.get<MonthlyTrendOut>('/stats/monthly-trend', { params: { months } }).then((r) => r.data)
+}
+
+export function fetchCategoryBreakdown(type: EntryType = 'expense', months = 1, rollup = true) {
   return apiClient
-    .get<MonthlyTrendOut>('/stats/monthly-trend', { params: { months } })
+    .get<CategoryBreakdownOut>('/stats/category-breakdown', { params: { type, months, rollup } })
     .then((r) => r.data)
 }

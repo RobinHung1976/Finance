@@ -57,7 +57,7 @@ class CategoryOut(BaseModel):
 class TransactionCreate(BaseModel):
     account_id: str
     category_id: str
-    amount: float = Field(gt=0)  # 一律存正數,收支方向由 type 決定
+    amount: float = Field(gt=0)
     type: EntryType
     date: date_type
     note: str | None = Field(default=None, max_length=500)
@@ -93,12 +93,12 @@ class TransactionOut(BaseModel):
         from_attributes = True
 
 
-# ---------- Stats ----------
+# ---------- Stats: Monthly Trend ----------
 class MonthlySummary(BaseModel):
-    month: str  # "YYYY-MM"
+    month: str
     income: float
     expense: float
-    balance: float  # income - expense
+    balance: float
 
 
 class MonthlyTrendOut(BaseModel):
@@ -106,3 +106,17 @@ class MonthlyTrendOut(BaseModel):
     total_income: float
     total_expense: float
     total_balance: float
+
+
+# ---------- Stats: Category Breakdown (A3) ----------
+class CategoryBreakdownItem(BaseModel):
+    category_id: str
+    category_name: str
+    amount: float
+    percentage: float
+
+
+class CategoryBreakdownOut(BaseModel):
+    type: EntryType
+    total: float
+    items: list[CategoryBreakdownItem]

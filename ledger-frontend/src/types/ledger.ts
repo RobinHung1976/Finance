@@ -22,7 +22,7 @@ export interface TransactionOut {
   category_id: string
   amount: number
   type: EntryType
-  date: string // YYYY-MM-DD
+  date: string
   note: string | null
   user_id: string | null
 }
@@ -58,7 +58,7 @@ export interface TransactionFilters {
 
 // ---------- Stats ----------
 export interface MonthlySummary {
-  month: string // "YYYY-MM"
+  month: string
   income: number
   expense: number
   balance: number
@@ -69,4 +69,17 @@ export interface MonthlyTrendOut {
   total_income: number
   total_expense: number
   total_balance: number
+}
+
+export interface CategoryBreakdownItem {
+  category_id: string
+  category_name: string
+  amount: number
+  percentage: number
+}
+
+export interface CategoryBreakdownOut {
+  type: EntryType
+  total: number
+  items: CategoryBreakdownItem[]
 }
