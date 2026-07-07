@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { fetchMyHousehold } from '@/api/auth'
+import type { HouseholdOut } from '@/types/api'
 import AccountList from '@/components/AccountList.vue'
 import CategoryList from '@/components/CategoryList.vue'
 import TransactionList from '@/components/TransactionList.vue'
@@ -11,6 +13,15 @@ import DateRangePicker from '@/components/DateRangePicker.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
+
+const household = ref<HouseholdOut | null>(null)
+onMounted(async () => {
+  try {
+    household.value = await fetchMyHousehold()
+  } catch {
+    // 失敗不阻斷主頁,標題 fallback 顯示預設文字
+  }
+})
 
 type Tab = 'stats' | 'transactions' | 'accounts' | 'categories'
 const activeTab = ref<Tab>('stats')
@@ -38,7 +49,7 @@ function handleLogout() {
 <template>
   <div style="max-width: 1000px; margin: 0 auto; padding: 32px 24px">
     <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px">
-      <h1 style="font-size: 20px; margin: 0">家庭理財</h1>
+      <h1 style="font-size: 20px; margin: 0">{{ household?.name ?? '家庭理財' }}</h1>
       <div style="display: flex; gap: 12px; align-items: center">
         <router-link to="/members" style="font-size: 13px; color: var(--color-primary); text-decoration: none">
           成員管理
