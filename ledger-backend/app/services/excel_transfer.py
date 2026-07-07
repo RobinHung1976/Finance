@@ -37,11 +37,19 @@ def parse_month_sheets(file_bytes: bytes) -> list[dict]:
                 "sheet": sheet_name,
                 "row": row_idx,
                 "date_raw": date_cell.value,
-                "category_top": (category_cell.value or "").strip() if category_cell.value else None,
-                "item": (item_cell.value or "").strip() if item_cell.value else None,
+                "category_top": _to_clean_str(category_cell.value),
+                "item": _to_clean_str(item_cell.value),
                 "amount_raw": amount_cell.value,
             })
     return rows
+
+
+def _to_clean_str(value) -> str | None:
+    """儲存格內容可能是 str/int/float(使用者誤填數字),統一轉字串再 strip。"""
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
 
 
 def _validate_row(raw: dict) -> tuple[dict | None, str | None]:

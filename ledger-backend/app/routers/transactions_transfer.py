@@ -21,7 +21,10 @@ async def import_preview(
     content = await file.read()
     if len(content) > MAX_IMPORT_SIZE:
         raise HTTPException(413, "檔案過大")
-    result = process_import(db, current_user.household_id, current_user.id, account_id, content, dry_run=True)
+    try:
+        result = process_import(db, current_user.household_id, current_user.id, account_id, content, dry_run=True)
+    except Exception as e:
+        raise HTTPException(400, f"檔案解析失敗:{e}")
     return ImportPreviewResponse(**result)
 
 
