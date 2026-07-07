@@ -90,10 +90,10 @@ watch(() => [props.type, props.months, rollup.value], loadAndRender)
 </template>
 
 <style scoped>
-.category-breakdown { display: flex; flex-direction: column; height: 100%; }
+.category-breakdown { display: flex; flex-direction: column; }
 .toolbar { text-align: right; margin-bottom: 0.5rem; }
 .toggle { font-size: 0.85rem; cursor: pointer; user-select: none; }
-.chart-wrap { flex: 1; position: relative; min-height: 260px; }
+.chart-wrap { position: relative; height: 320px; }
 .error { color: #dc2626; }
 .empty { color: #6b7280; text-align: center; padding: 2rem 0; }
 .total { text-align: center; font-weight: 600; margin-top: 0.5rem; }
