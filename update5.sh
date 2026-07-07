@@ -1,3 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FRONTEND=ledger-frontend
+[ -d "$FRONTEND" ] || { echo "請在 repo 根目錄執行"; exit 1; }
+
+cat > "$FRONTEND/src/components/CategoryBreakdownChart.vue" << 'EOF'
 <script setup lang="ts">
 import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
@@ -153,3 +160,30 @@ watch(() => [props.type, props.months], () => {
 .empty { color: #6b7280; text-align: center; padding: 2rem 0; }
 .total { text-align: center; font-weight: 600; margin-top: 0.5rem; }
 </style>
+EOF
+
+python3 << 'PYEOF'
+path = "ledger-frontend/src/components/MonthlyTrendChart.vue"
+with open(path) as f:
+    content = f.read()
+
+old = """    data.value = await fetchMonthlyTrend(props.months)
+    await nextTick() // 等 v-else chart-wrap 掛載後 canvasRef 才存在
+    renderChart()"""
+new = """    data.value = await fetchMonthlyTrend(props.months)
+    await nextTick()
+    requestAnimationFrame(renderChart) // 等瀏覽器完成 layout,避免 canvas 量到 0x0"""
+
+if old not in content:
+    raise SystemExit("❌ loadData 內容不符(可能 update4 未套用成功),請人工檢查 MonthlyTrendChart.vue")
+
+content = content.replace(old, new)
+with open(path, "w") as f:
+    f.write(content)
+print("✅ MonthlyTrendChart.vue 已加入 requestAnimationFrame")
+PYEOF
+
+echo "✅ 全部檔案已修正完成"
+git add -A
+git commit -m "fix: 圖表用 rAF 確保 layout 完成再渲染 + 移除 rollup 切換改為固定捲層 + 麵包屑改按鈕式"
+echo "✅ 已 commit,請執行 'git push origin main',再到 server 跑 ./deploy.sh"

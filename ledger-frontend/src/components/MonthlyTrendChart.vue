@@ -75,8 +75,8 @@ async function loadData() {
   error.value = null
   try {
     data.value = await fetchMonthlyTrend(props.months)
-    await nextTick() // 等 v-else chart-wrap 掛載後 canvasRef 才存在
-    renderChart()
+    await nextTick()
+    requestAnimationFrame(renderChart) // 等瀏覽器完成 layout,避免 canvas 量到 0x0
   } catch (e) {
     error.value = '統計資料載入失敗,請稍後再試'
     console.error(e)
