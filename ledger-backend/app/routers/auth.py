@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.audit import log_action
 from app.email import send_email
 from app.config import settings
 from app.models import Household, PasswordResetToken, User, UserRole
@@ -65,6 +66,8 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
             detail="帳號或密碼錯誤",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    log_action(db, user=user, action="login", resource_type="user", resource_id=user.id)
+    db.commit()
     token = create_access_token(
         {"sub": user.id, "household_id": user.household_id, "role": user.role.value}
     )

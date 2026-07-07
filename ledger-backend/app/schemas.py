@@ -59,6 +59,26 @@ class ResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8, max_length=128)
 
 
+class AuditLogOut(BaseModel):
+    id: str
+    actor_name: str | None
+    action: str
+    resource_type: str
+    resource_id: str | None
+    detail: str | None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class AuditLogPage(BaseModel):
+    items: list[AuditLogOut]
+    total: int
+    limit: int
+    offset: int
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

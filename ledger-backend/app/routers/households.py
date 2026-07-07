@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.audit import log_action
 from app.database import get_db
 from app.deps import get_current_user, require_admin
-from app.models import User
-from app.schemas import HouseholdOut, UserCreate, UserOut
+from app.models import AuditLog, User, UserRole
+from app.schemas import AuditLogPage, HouseholdOut, UserCreate, UserOut
 from app.security import hash_password
 
 router = APIRouter(prefix="/households", tags=["households"])
@@ -27,7 +30,6 @@ def add_member(
     current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    """僅管理者可新增家庭成員。"""
     new_user = User(
         household_id=current_user.household_id,
         name=payload.name,
@@ -38,9 +40,68 @@ def add_member(
     )
     db.add(new_user)
     try:
-        db.commit()
+        db.flush()
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="帳號已被使用")
+
+    log_action(db, user=current_user, action="create", resource_type="member",
+               resource_id=new_user.id, detail=f"新增成員：{new_user.name}（{new_user.role.value}）")
+    db.commit()
     db.refresh(new_user)
     return new_user
+
+
+@router.delete("/me/members/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_member(
+    user_id: str,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    if user_id == current_user.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不可刪除自己的帳號")
+
+    member = db.get(User, user_id)
+    if member is None or member.household_id != current_user.household_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="成員不存在")
+
+    if member.role == UserRole.admin:
+        other_admin = (
+            db.query(User)
+            .filter(User.household_id == current_user.household_id, User.role == UserRole.admin, User.id != user_id)
+            .first()
+        )
+        if other_admin is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="家庭至少需保留一位管理者")
+
+    log_action(db, user=current_user, action="delete", resource_type="member",
+               resource_id=member.id, detail=f"刪除成員：{member.name}")
+    db.delete(member)
+    db.commit()
+
+
+@router.get("/me/audit-logs", response_model=AuditLogPage)
+def list_audit_logs(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    action: str | None = Query(default=None),
+    resource_type: str | None = Query(default=None),
+    start_date: date | None = Query(default=None),
+    end_date: date | None = Query(default=None),
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    query = db.query(AuditLog).filter(AuditLog.household_id == current_user.household_id)
+
+    if action is not None:
+        query = query.filter(AuditLog.action == action)
+    if resource_type is not None:
+        query = query.filter(AuditLog.resource_type == resource_type)
+    if start_date is not None:
+        query = query.filter(AuditLog.created_at >= start_date)
+    if end_date is not None:
+        query = query.filter(AuditLog.created_at < (end_date + timedelta(days=1)))
+
+    total = query.count()
+    items = query.order_by(AuditLog.created_at.desc()).offset(offset).limit(limit).all()
+    return AuditLogPage(items=items, total=total, limit=limit, offset=offset)

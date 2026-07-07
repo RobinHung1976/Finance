@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.audit import log_action
 from app.deps import get_current_user
 from app.models import Account, Category, Transaction, User
 from app.schemas_ledger import TransactionCreate, TransactionOut, TransactionUpdate
@@ -75,6 +76,8 @@ def create_transaction(
     else:
         account.balance = float(account.balance) - payload.amount
 
+    log_action(db, user=current_user, action="create", resource_type="transaction",
+               resource_id=tx.id, detail=f"新增交易：{tx.amount}")
     db.commit()
     db.refresh(tx)
     return tx
@@ -107,6 +110,8 @@ def update_transaction(
     else:
         new_account.balance = float(new_account.balance) - float(tx.amount)
 
+    log_action(db, user=current_user, action="update", resource_type="transaction",
+               resource_id=tx.id, detail=f"修改交易：{transaction_id}")
     db.commit()
     db.refresh(tx)
     return tx
@@ -126,5 +131,7 @@ def delete_transaction(
     else:
         account.balance = float(account.balance) + float(tx.amount)
 
+    log_action(db, user=current_user, action="delete", resource_type="transaction",
+               resource_id=tx.id, detail=f"刪除交易：{tx.amount}")
     db.delete(tx)
     db.commit()

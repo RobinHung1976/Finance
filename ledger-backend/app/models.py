@@ -131,6 +131,20 @@ class TransactionTag(Base):
     tag_id: Mapped[str] = mapped_column(ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True)
 
 
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id: Mapped[str] = mapped_column(UUID(as_uuid=False), primary_key=True, default=gen_uuid)
+    household_id: Mapped[str] = mapped_column(ForeignKey("households.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    action: Mapped[str] = mapped_column(String(20), nullable=False)
+    resource_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    resource_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    detail: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    actor_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 

@@ -23,3 +23,27 @@ export interface UserOut {
 export interface ApiError {
   detail: string
 }
+
+export interface AuditLogOut {
+  id: string
+  actor_name: string | null
+  action: 'login' | 'create' | 'update' | 'delete'
+  resource_type: string
+  resource_id: string | null
+  detail: string | null
+  created_at: string
+}
+
+export interface AuditLogPage {
+  items: AuditLogOut[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface AuditLogFilters {
+  action?: string
+  resource_type?: string
+  start_date?: string
+  end_date?: string
+}

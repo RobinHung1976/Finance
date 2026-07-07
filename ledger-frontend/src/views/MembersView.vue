@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchMyHousehold, fetchMembers, addMember } from '@/api/auth'
+import { fetchMyHousehold, fetchMembers, addMember, deleteMember } from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import type { HouseholdOut, UserOut } from '@/types/api'
 import type { AxiosError } from 'axios'
@@ -44,6 +44,17 @@ onMounted(loadData)
 function handleLogout() {
   auth.logout()
   router.push({ name: 'login' })
+}
+
+async function handleDeleteMember(member: UserOut) {
+  if (!confirm(`確定要刪除成員「${member.name}」嗎?此操作無法復原。`)) return
+  try {
+    await deleteMember(member.id)
+    await loadData()
+  } catch (err) {
+    const axiosErr = err as AxiosError<ApiError>
+    loadError.value = axiosErr.response?.data?.detail ?? '刪除成員失敗'
+  }
 }
 
 function resetAddForm() {
@@ -201,7 +212,16 @@ async function handleAddMember() {
           "
         >
           <span>{{ member.name }}</span>
-          <span style="color: #6b7a74; font-size: 13px">{{ member.role === 'admin' ? '管理者' : '使用者' }}</span>
+          <div style="display: flex; align-items: center; gap: 12px">
+            <span style="color: #6b7a74; font-size: 13px">{{ member.role === 'admin' ? '管理者' : '使用者' }}</span>
+            <button
+              v-if="auth.role === 'admin' && member.id !== auth.userId"
+              style="padding: 4px 10px; font-size: 12px; background: #dc2626; color: #fff; border: none; border-radius: 6px; cursor: pointer"
+              @click="handleDeleteMember(member)"
+            >
+              刪除
+            </button>
+          </div>
         </li>
       </ul>
     </section>

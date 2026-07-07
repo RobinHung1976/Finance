@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.deps import get_current_user
-from app.models import Account, Category, EntryType, Transaction, User
+from app.audit import log_action
+from app.deps import get_current_user, require_admin
+from app.models import Account, Category, EntryType, Transaction, User, UserRole
 from app.schemas_ledger import AccountCreate, AccountOut, AccountUpdate
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
@@ -52,6 +53,9 @@ def create_account(
 
     account = Account(household_id=current_user.household_id, **payload.model_dump())
     db.add(account)
+    db.flush()
+    log_action(db, user=current_user, action="create", resource_type="account",
+               resource_id=account.id, detail=f"新增帳戶：{account.name}")
     db.commit()
     db.refresh(account)
     return account
@@ -77,6 +81,9 @@ def update_account(
     account = _get_owned_account(account_id, current_user, db)
     update_data = payload.model_dump(exclude_unset=True)
 
+    if "balance" in update_data and current_user.role != UserRole.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="僅管理者可調整帳戶餘額")
+
     if update_data.get("is_default_expense") is True:
         _clear_other_default_expense(current_user.household_id, db, exclude_id=account.id)
 
@@ -97,6 +104,9 @@ def update_account(
                     note="帳戶餘額手動調整",
                 )
             )
+            log_action(db, user=current_user, action="update", resource_type="account",
+                       resource_id=account.id,
+                       detail=f"調整帳戶餘額：{account.name}（{'+' if delta > 0 else ''}{delta}）")
 
     for field, value in update_data.items():
         setattr(account, field, value)
@@ -108,9 +118,11 @@ def update_account(
 @router.delete("/{account_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_account(
     account_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
     account = _get_owned_account(account_id, current_user, db)
+    log_action(db, user=current_user, action="delete", resource_type="account",
+               resource_id=account.id, detail=f"刪除帳戶：{account.name}")
     db.delete(account)
     db.commit()

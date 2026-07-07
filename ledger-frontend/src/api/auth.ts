@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { TokenResponse, HouseholdOut, UserOut, UserRole } from '@/types/api'
+import type { TokenResponse, HouseholdOut, UserOut, UserRole, AuditLogPage, AuditLogFilters } from '@/types/api'
 
 export interface RegisterHouseholdPayload {
   household_name: string
@@ -40,6 +40,16 @@ export interface AddMemberPayload {
 
 export function addMember(payload: AddMemberPayload) {
   return apiClient.post<UserOut>('/households/me/members', payload).then((r) => r.data)
+}
+
+export function deleteMember(userId: string) {
+  return apiClient.delete(`/households/me/members/${userId}`)
+}
+
+export function fetchAuditLogs(limit: number, offset: number, filters: AuditLogFilters = {}) {
+  return apiClient
+    .get<AuditLogPage>('/households/me/audit-logs', { params: { limit, offset, ...filters } })
+    .then((r) => r.data)
 }
 
 export function forgotPassword(email: string) {

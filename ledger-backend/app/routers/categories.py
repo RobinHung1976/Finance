@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.audit import log_action
 from app.deps import get_current_user
 from app.models import Category, Transaction, User
 from app.schemas_ledger import CategoryCreate, CategoryOut, CategoryUpdate
@@ -33,6 +34,9 @@ def create_category(
 
     category = Category(household_id=current_user.household_id, **payload.model_dump())
     db.add(category)
+    db.flush()
+    log_action(db, user=current_user, action="create", resource_type="category",
+               resource_id=category.id, detail=f"新增分類：{category.name}")
     db.commit()
     db.refresh(category)
     return category
@@ -53,6 +57,8 @@ def update_category(
 
     for field, value in update_data.items():
         setattr(category, field, value)
+    log_action(db, user=current_user, action="update", resource_type="category",
+               resource_id=category.id, detail=f"修改分類：{category.name}")
     db.commit()
     db.refresh(category)
     return category
@@ -74,5 +80,7 @@ def delete_category(
     if in_use:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="此分類已有交易紀錄使用中,無法刪除")
 
+    log_action(db, user=current_user, action="delete", resource_type="category",
+               resource_id=category.id, detail=f"刪除分類：{category.name}")
     db.delete(category)
     db.commit()

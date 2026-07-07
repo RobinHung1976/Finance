@@ -39,6 +39,12 @@ const router = createRouter({
       name: 'members',
       component: () => import('@/views/MembersView.vue'),
     },
+    {
+      path: '/audit-logs',
+      name: 'audit-logs',
+      component: () => import('@/views/AuditLogView.vue'),
+      meta: { requiresAdmin: true },
+    },
   ],
 })
 
@@ -48,6 +54,9 @@ router.beforeEach((to) => {
     return { name: 'login' }
   }
   if (to.meta.public && auth.isAuthenticated()) {
+    return { name: 'dashboard' }
+  }
+  if (to.meta.requiresAdmin && auth.role !== 'admin') {
     return { name: 'dashboard' }
   }
   return true
