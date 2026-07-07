@@ -5,9 +5,12 @@ export function previewImport(file: File, accountId: string) {
   const form = new FormData()
   form.append('file', file)
   form.append('account_id', accountId)
-  // 不手動設定 Content-Type,交給 axios 自動帶正確 boundary
+  // apiClient 有全域固定 Content-Type: application/json,需顯式清除該欄位
+  // 才能讓 axios 依 FormData 型別自動產生含 boundary 的 multipart header
   return apiClient
-    .post<ImportPreviewResponse>('/transactions/import/preview', form)
+    .post<ImportPreviewResponse>('/transactions/import/preview', form, {
+      headers: { 'Content-Type': undefined },
+    })
     .then((r) => r.data)
 }
 
@@ -17,7 +20,9 @@ export function commitImport(file: File, accountId: string, forceRows: string[] 
   form.append('account_id', accountId)
   form.append('force_rows', forceRows.join(','))
   return apiClient
-    .post<ImportCommitResponse>('/transactions/import/commit', form)
+    .post<ImportCommitResponse>('/transactions/import/commit', form, {
+      headers: { 'Content-Type': undefined },
+    })
     .then((r) => r.data)
 }
 
