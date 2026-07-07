@@ -170,7 +170,7 @@ onBeforeUnmount(() => chartInstance?.destroy())
 }
 
 .chart-wrap {
-  height: 280px;
+  height: 320px;
   position: relative;
 }
 </style>

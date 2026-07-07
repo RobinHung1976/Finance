@@ -73,8 +73,8 @@ function handleLogout() {
   color: #6b7a74; border-bottom: 2px solid transparent; margin-bottom: -1px; cursor: pointer;
 }
 .tab-bar button.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
-.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-.stats-panel { background: #fff; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: stretch; }
+.stats-panel { background: #fff; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; }
 .stats-panel h3 { margin: 0 0 12px; font-size: 15px; }
 @media (max-width: 768px) { .stats-grid { grid-template-columns: 1fr; } }
 </style>

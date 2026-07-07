@@ -108,12 +108,13 @@ class MonthlyTrendOut(BaseModel):
     total_balance: float
 
 
-# ---------- Stats: Category Breakdown (A3) ----------
+# ---------- Stats: Category Breakdown (A3, 含下鑽) ----------
 class CategoryBreakdownItem(BaseModel):
     category_id: str
     category_name: str
     amount: float
     percentage: float
+    has_children: bool
 
 
 class CategoryBreakdownOut(BaseModel):

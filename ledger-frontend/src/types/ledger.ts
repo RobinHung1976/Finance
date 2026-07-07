@@ -56,7 +56,6 @@ export interface TransactionFilters {
   category_id?: string
 }
 
-// ---------- Stats ----------
 export interface MonthlySummary {
   month: string
   income: number
@@ -76,6 +75,7 @@ export interface CategoryBreakdownItem {
   category_name: string
   amount: number
   percentage: number
+  has_children: boolean
 }
 
 export interface CategoryBreakdownOut {

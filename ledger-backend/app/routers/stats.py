@@ -24,7 +24,6 @@ def monthly_trend(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """近 N 個月收支趨勢 + 結餘計算(A1 + A2)。"""
     today = date.today()
     range_start = today.replace(day=1) - relativedelta(months=months - 1)
 
@@ -75,12 +74,13 @@ def monthly_trend(
     )
 
 
-# rollup=True: 子分類金額 Recursive CTE 捲到頂層分類
+# :root_parent_id 控制下鑽起點,None=頂層;IS NOT DISTINCT FROM 正確處理 NULL 比對
 _CATEGORY_BREAKDOWN_ROLLUP_SQL = text("""
     WITH RECURSIVE cat_tree AS (
         SELECT id, id AS root_id, name AS root_name
         FROM categories
-        WHERE household_id = :household_id AND parent_id IS NULL
+        WHERE household_id = :household_id
+          AND parent_id IS NOT DISTINCT FROM :root_parent_id
 
         UNION ALL
 
@@ -90,7 +90,11 @@ _CATEGORY_BREAKDOWN_ROLLUP_SQL = text("""
         WHERE c.household_id = :household_id
     )
     SELECT ct.root_id AS category_id, ct.root_name AS category_name,
-           COALESCE(SUM(t.amount), 0) AS amount
+           COALESCE(SUM(t.amount), 0) AS amount,
+           EXISTS (
+               SELECT 1 FROM categories cc
+               WHERE cc.parent_id = ct.root_id AND cc.household_id = :household_id
+           ) AS has_children
     FROM cat_tree ct
     JOIN transactions t ON t.category_id = ct.id
     WHERE t.household_id = :household_id
@@ -101,13 +105,18 @@ _CATEGORY_BREAKDOWN_ROLLUP_SQL = text("""
     ORDER BY amount DESC
 """)
 
-# rollup=False: 保留原始分類層級,不捲層
 _CATEGORY_BREAKDOWN_LEAF_SQL = text("""
     SELECT c.id AS category_id, c.name AS category_name,
-           COALESCE(SUM(t.amount), 0) AS amount
+           COALESCE(SUM(t.amount), 0) AS amount,
+           EXISTS (
+               SELECT 1 FROM categories cc
+               WHERE cc.parent_id = c.id AND cc.household_id = :household_id
+           ) AS has_children
     FROM categories c
     JOIN transactions t ON t.category_id = c.id
-    WHERE t.household_id = :household_id
+    WHERE c.household_id = :household_id
+      AND c.parent_id IS NOT DISTINCT FROM :root_parent_id
+      AND t.household_id = :household_id
       AND t.type = :entry_type
       AND t.date >= :start_date
       AND t.date <= :end_date
@@ -121,6 +130,7 @@ def category_breakdown(
     type: EntryType = Query(EntryType.expense),
     months: int = Query(1, ge=1, le=36, description="回溯月數,1=本月"),
     rollup: bool = Query(True, description="True=捲到頂層分類, False=保留原始分類層級"),
+    parent_id: str | None = Query(None, description="下鑽指定分類的子項,None=頂層"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -136,18 +146,19 @@ def category_breakdown(
             "entry_type": type.value,
             "start_date": start_date,
             "end_date": end_date,
+            "root_parent_id": parent_id,
         },
     ).mappings().all()
 
     total = sum(float(r["amount"]) for r in rows)
     items = [
         CategoryBreakdownItem(
-            category_id=str(r["category_id"]),
+            category_id=str(r["category_id"]),  # UUID -> str,修正 pydantic validation error
             category_name=r["category_name"],
             amount=float(r["amount"]),
             percentage=round(float(r["amount"]) / total * 100, 2) if total > 0 else 0.0,
+            has_children=bool(r["has_children"]),
         )
         for r in rows
     ]
-
     return CategoryBreakdownOut(type=type, total=total, items=items)
