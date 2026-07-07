@@ -54,6 +54,13 @@ function handleLogout() {
         <router-link to="/members" style="font-size: 13px; color: var(--color-primary); text-decoration: none">
           成員管理
         </router-link>
+        <router-link
+          v-if="auth.role === 'admin'"
+          to="/audit-logs"
+          style="font-size: 13px; color: var(--color-primary); text-decoration: none"
+        >
+          操作紀錄
+        </router-link>
         <button class="btn-primary" style="width: auto; padding: 6px 14px; font-size: 13px" @click="handleLogout">
           登出
         </button>
