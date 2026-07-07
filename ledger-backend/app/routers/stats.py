@@ -142,7 +142,7 @@ def category_breakdown(
     total = sum(float(r["amount"]) for r in rows)
     items = [
         CategoryBreakdownItem(
-            category_id=r["category_id"],
+            category_id=str(r["category_id"]),
             category_name=r["category_name"],
             amount=float(r["amount"]),
             percentage=round(float(r["amount"]) / total * 100, 2) if total > 0 else 0.0,
