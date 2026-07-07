@@ -7,6 +7,5 @@ ledger-frontend/node_modules/
 ledger-frontend/dist/
 
 ledger-backend/.env
-ledger-frontend/.env.production
 
 .DS_Store
