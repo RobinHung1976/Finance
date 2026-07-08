@@ -61,3 +61,18 @@ export function resetPassword(token: string, newPassword: string) {
     .post<{ message: string }>('/auth/reset-password', { token, new_password: newPassword })
     .then((r) => r.data)
 }
+
+export async function updateHousehold(name: string): Promise<HouseholdOut> {
+  const { data } = await apiClient.patch<HouseholdOut>('/households/me', { name })
+  return data
+}
+
+export async function archiveHousehold(): Promise<HouseholdOut> {
+  const { data } = await apiClient.post<HouseholdOut>('/households/me/archive')
+  return data
+}
+
+export async function unarchiveHousehold(): Promise<HouseholdOut> {
+  const { data } = await apiClient.post<HouseholdOut>('/households/me/unarchive')
+  return data
+}

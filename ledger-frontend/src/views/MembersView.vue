@@ -1,11 +1,20 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchMyHousehold, fetchMembers, addMember, deleteMember } from '@/api/auth'
+import {
+  fetchMyHousehold,
+  fetchMembers,
+  addMember,
+  deleteMember,
+  updateHousehold,
+  archiveHousehold,
+  unarchiveHousehold,
+} from '@/api/auth'
 import { useAuthStore } from '@/stores/auth'
 import type { HouseholdOut, UserOut } from '@/types/api'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/types/api'
+import { validateHouseholdName } from '@/utils/validators'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -14,6 +23,15 @@ const household = ref<HouseholdOut | null>(null)
 const members = ref<UserOut[]>([])
 const isLoading = ref(true)
 const loadError = ref('')
+
+// 帳本名稱編輯狀態(僅 admin 可編輯)
+const editingName = ref(false)
+const nameDraft = ref('')
+const nameError = ref('')
+const isSavingName = ref(false)
+
+// 封存/解封狀態(僅 admin 可操作)
+const isTogglingArchive = ref(false)
 
 // 新增成員表單狀態
 const showAddForm = ref(false)
@@ -44,6 +62,68 @@ onMounted(loadData)
 function handleLogout() {
   auth.logout()
   router.push({ name: 'login' })
+}
+
+function startEditName() {
+  if (!household.value) return
+  nameDraft.value = household.value.name
+  nameError.value = ''
+  editingName.value = true
+}
+
+function cancelEditName() {
+  editingName.value = false
+  nameError.value = ''
+}
+
+async function saveHouseholdName() {
+  const err = validateHouseholdName(nameDraft.value)
+  if (err) {
+    nameError.value = err
+    return
+  }
+  isSavingName.value = true
+  try {
+    const updated = await updateHousehold(nameDraft.value.trim())
+    household.value = updated
+    editingName.value = false
+  } catch (err) {
+    const axiosErr = err as AxiosError<ApiError>
+    nameError.value = axiosErr.response?.data?.detail ?? '更新帳本名稱失敗'
+  } finally {
+    isSavingName.value = false
+  }
+}
+
+async function handleArchive() {
+  const otherMemberCount = members.value.filter((m) => m.id !== auth.userId).length
+  if (otherMemberCount > 0) {
+    loadError.value = '帳本內還有其他成員,只有最後一位成員時才能封存'
+    return
+  }
+  if (!confirm('確定要封存這個帳本嗎?封存後僅能檢視,需由管理者解封才能恢復使用。')) return
+
+  isTogglingArchive.value = true
+  try {
+    household.value = await archiveHousehold()
+  } catch (err) {
+    const axiosErr = err as AxiosError<ApiError>
+    loadError.value = axiosErr.response?.data?.detail ?? '封存帳本失敗'
+  } finally {
+    isTogglingArchive.value = false
+  }
+}
+
+async function handleUnarchive() {
+  isTogglingArchive.value = true
+  try {
+    household.value = await unarchiveHousehold()
+  } catch (err) {
+    const axiosErr = err as AxiosError<ApiError>
+    loadError.value = axiosErr.response?.data?.detail ?? '解封帳本失敗'
+  } finally {
+    isTogglingArchive.value = false
+  }
 }
 
 async function handleDeleteMember(member: UserOut) {
@@ -100,9 +180,67 @@ async function handleAddMember() {
 </script>
 
 <template>
-  <div style="max-width: 720px; margin: 0 auto; padding: 32px 24px">
+  <div
+    v-if="household && !household.is_active"
+    style="max-width: 480px; margin: 80px auto; padding: 32px 24px; text-align: center"
+  >
+    <h1 style="font-size: 20px; margin-bottom: 12px">{{ household.name }}</h1>
+    <p style="color: #6b7a74; font-size: 14px; margin-bottom: 24px">
+      此帳本已封存,目前僅能檢視,無法使用其他功能。
+    </p>
+    <div v-if="loadError" class="error-banner" style="margin-bottom: 16px">{{ loadError }}</div>
+    <button
+      v-if="auth.role === 'admin'"
+      class="btn-primary"
+      style="width: auto; padding: 8px 20px"
+      :disabled="isTogglingArchive"
+      @click="handleUnarchive"
+    >
+      {{ isTogglingArchive ? '解封中…' : '解封帳本' }}
+    </button>
+    <button
+      class="btn-primary"
+      style="width: auto; padding: 8px 20px; margin-left: 8px; background: #6b7a74"
+      @click="handleLogout"
+    >
+      登出
+    </button>
+  </div>
+
+  <div v-else style="max-width: 720px; margin: 0 auto; padding: 32px 24px">
     <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px">
-      <h1 style="font-size: 20px; margin: 0">{{ household?.name ?? '載入中…' }}</h1>
+      <div v-if="!editingName" style="display: flex; align-items: center; gap: 8px">
+        <h1 style="font-size: 20px; margin: 0">{{ household?.name ?? '載入中…' }}</h1>
+        <button
+          v-if="auth.role === 'admin' && household"
+          style="border: none; background: none; cursor: pointer; color: var(--color-primary); font-size: 13px; padding: 2px 6px"
+          @click="startEditName"
+        >
+          編輯
+        </button>
+      </div>
+      <div v-else style="display: flex; flex-direction: column; gap: 6px; max-width: 320px">
+        <div style="display: flex; gap: 8px">
+          <input
+            v-model="nameDraft"
+            type="text"
+            maxlength="50"
+            style="flex: 1; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: 6px; font-size: 15px"
+            @keyup.enter="saveHouseholdName"
+          />
+          <button
+            class="btn-primary"
+            style="width: auto; padding: 6px 12px; font-size: 13px"
+            :disabled="isSavingName"
+            @click="saveHouseholdName"
+          >
+            {{ isSavingName ? '儲存中…' : '儲存' }}
+          </button>
+          <button style="width: auto; padding: 6px 12px; font-size: 13px" @click="cancelEditName">取消</button>
+        </div>
+        <span v-if="nameError" style="color: #dc2626; font-size: 12px">{{ nameError }}</span>
+      </div>
+
       <div style="display: flex; gap: 12px; align-items: center">
         <router-link to="/" style="font-size: 13px; color: var(--color-primary); text-decoration: none">
           返回理財首頁
@@ -225,6 +363,20 @@ async function handleAddMember() {
         </li>
       </ul>
     </section>
+
+    <div
+      v-if="auth.role === 'admin' && !isLoading"
+      style="margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--color-border)"
+    >
+      <button
+        style="width: auto; padding: 6px 14px; font-size: 13px; background: #6b7a74; color: #fff; border: none; border-radius: 6px; cursor: pointer"
+        :disabled="isTogglingArchive"
+        @click="handleArchive"
+      >
+        {{ isTogglingArchive ? '封存中…' : '封存此帳本' }}
+      </button>
+      <span style="color: #6b7a74; font-size: 12px; margin-left: 8px">僅在帳本內只剩自己一位成員時可封存</span>
+    </div>
 
     <p style="color: #6b7a74; font-size: 13px; margin-top: 32px">
       交易紀錄、多帳戶與統計圖表功能將在下一步接續開發。

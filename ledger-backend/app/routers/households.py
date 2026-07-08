@@ -8,7 +8,7 @@ from app.audit import log_action
 from app.database import get_db
 from app.deps import get_current_user, require_admin
 from app.models import AuditLog, User, UserRole
-from app.schemas import AuditLogPage, HouseholdOut, UserCreate, UserOut
+from app.schemas import AuditLogPage, HouseholdOut, HouseholdUpdate, UserCreate, UserOut
 from app.security import hash_password
 
 router = APIRouter(prefix="/households", tags=["households"])
@@ -17,6 +17,68 @@ router = APIRouter(prefix="/households", tags=["households"])
 @router.get("/me", response_model=HouseholdOut)
 def get_my_household(current_user: User = Depends(get_current_user)):
     return current_user.household
+
+
+@router.patch("/me", response_model=HouseholdOut)
+def update_household(
+    payload: HouseholdUpdate,
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    household = current_user.household
+    old_name = household.name
+    household.name = payload.name  # 特殊字元/長度已由 HouseholdUpdate 的 pydantic validator 擋掉
+
+    log_action(db, user=current_user, action="update", resource_type="household",
+               resource_id=household.id, detail=f"帳本名稱：「{old_name}」→「{household.name}」")
+    db.commit()
+    db.refresh(household)
+    return household
+
+
+@router.post("/me/archive", response_model=HouseholdOut)
+def archive_household(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    household = current_user.household
+    if not household.is_active:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="帳本已封存")
+
+    other_member_count = (
+        db.query(User)
+        .filter(User.household_id == current_user.household_id, User.id != current_user.id)
+        .count()
+    )
+    if other_member_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="帳本內還有其他成員,只有最後一位成員時才能封存",
+        )
+
+    household.is_active = False
+    log_action(db, user=current_user, action="update", resource_type="household",
+               resource_id=household.id, detail="封存帳本")
+    db.commit()
+    db.refresh(household)
+    return household
+
+
+@router.post("/me/unarchive", response_model=HouseholdOut)
+def unarchive_household(
+    current_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    household = current_user.household
+    if household.is_active:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="帳本尚未封存")
+
+    household.is_active = True
+    log_action(db, user=current_user, action="update", resource_type="household",
+               resource_id=household.id, detail="解封帳本")
+    db.commit()
+    db.refresh(household)
+    return household
 
 
 @router.get("/me/members", response_model=list[UserOut])
