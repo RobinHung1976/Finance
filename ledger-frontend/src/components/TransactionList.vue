@@ -392,10 +392,10 @@ async function saveEdit(id: string) {
           <div class="tx-card-main">
             <div class="tx-card-info">
               <strong class="tx-category">{{ categoryName(tx.category_id) }}</strong>
-              <span class="tx-sub">
-                {{ accountName(tx.account_id) }}<template v-if="tx.note"> · {{ tx.note }}</template>
-                <template v-if="tx.tags.length"> · {{ tx.tags.map((t) => t.name).join('、') }}</template>
-              </span>
+              <span class="tx-sub">{{ accountName(tx.account_id) }}<template v-if="tx.note"> · {{ tx.note }}</template></span>
+              <div v-if="tx.tags.length" class="tx-tags">
+                <span v-for="t in tx.tags" :key="t.id" class="tag-chip">{{ t.name }}</span>
+              </div>
             </div>
             <span
               class="tx-amount"
@@ -492,6 +492,24 @@ async function saveEdit(id: string) {
 .tx-sub {
   font-size: 12px;
   color: #6b7a74;
+}
+
+.tx-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.tag-chip {
+  display: inline-block;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .tx-amount {
