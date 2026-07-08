@@ -51,9 +51,14 @@ def list_transactions(
     end_date: date | None = Query(default=None),
     account_id: str | None = Query(default=None),
     category_id: str | None = Query(default=None),
+    min_amount: float | None = Query(default=None, ge=0),
+    max_amount: float | None = Query(default=None, ge=0),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if min_amount is not None and max_amount is not None and min_amount > max_amount:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="最低金額不能大於最高金額")
+
     query = db.query(Transaction).filter(Transaction.household_id == current_user.household_id)
 
     if start_date is not None:
@@ -64,6 +69,10 @@ def list_transactions(
         query = query.filter(Transaction.account_id == account_id)
     if category_id is not None:
         query = query.filter(Transaction.category_id == category_id)
+    if min_amount is not None:
+        query = query.filter(Transaction.amount >= min_amount)
+    if max_amount is not None:
+        query = query.filter(Transaction.amount <= max_amount)
 
     return query.order_by(Transaction.date.desc()).all()
 

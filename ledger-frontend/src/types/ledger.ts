@@ -63,6 +63,8 @@ export interface TransactionFilters {
   end_date?: string
   account_id?: string
   category_id?: string
+  min_amount?: number
+  max_amount?: number
 }
 
 export interface MonthlySummary {

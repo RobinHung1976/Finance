@@ -37,6 +37,8 @@ const filterStartDate = ref(firstDayOfMonthISODate())
 const filterEndDate = ref(todayLocalISODate())
 const filterAccountId = ref('')
 const filterCategoryId = ref('')
+const filterMinAmount = ref<number | null>(null)
+const filterMaxAmount = ref<number | null>(null)
 
 // 新增表單
 const showForm = ref(false)
@@ -94,6 +96,8 @@ async function loadTransactions() {
       end_date: filterEndDate.value || undefined,
       account_id: filterAccountId.value || undefined,
       category_id: filterCategoryId.value || undefined,
+      min_amount: filterMinAmount.value ?? undefined,
+      max_amount: filterMaxAmount.value ?? undefined,
     })
   } catch {
     loadError.value = '載入交易紀錄失敗'
@@ -115,7 +119,10 @@ watch(
   }
 )
 
-watch([filterStartDate, filterEndDate, filterAccountId, filterCategoryId], loadTransactions)
+watch(
+  [filterStartDate, filterEndDate, filterAccountId, filterCategoryId, filterMinAmount, filterMaxAmount],
+  loadTransactions
+)
 
 const totalExpense = computed(() =>
   transactions.value.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
@@ -298,6 +305,23 @@ async function saveEdit(id: string) {
         <option value="">所有分類</option>
         <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
       </select>
+      <input
+        v-model.number="filterMinAmount"
+        type="number"
+        min="0"
+        placeholder="最低金額"
+        class="filter-input"
+        style="width: 100px"
+      />
+      <span style="color: #6b7a74">至</span>
+      <input
+        v-model.number="filterMaxAmount"
+        type="number"
+        min="0"
+        placeholder="最高金額"
+        class="filter-input"
+        style="width: 100px"
+      />
     </div>
 
     <div v-if="loadError" class="error-banner">{{ loadError }}</div>
@@ -507,8 +531,8 @@ async function saveEdit(id: string) {
   color: #92400e;
   border: 1px solid #fde68a;
   border-radius: 999px;
-  padding: 2px 10px;
-  font-size: 11px;
+  padding: 4px 12px;
+  font-size: 14px;
   font-weight: 600;
 }
 
