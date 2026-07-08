@@ -1,3 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FRONTEND=ledger-frontend
+[ -d "$FRONTEND" ] || { echo "請在 repo 根目錄執行"; exit 1; }
+
+# ---------- TagList.vue:完整覆寫(chip 網格 + 最近使用分區 + 詳情面板) ----------
+cat > "$FRONTEND/src/components/TagList.vue" << 'EOF'
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { fetchTags, createTag, updateTag, deleteTag } from '@/api/ledger'
@@ -306,3 +314,10 @@ async function handleDelete(tag: TagOut) {
   opacity: 0.75;
 }
 </style>
+EOF
+echo "✅ TagList.vue 已覆寫"
+
+echo "✅ 檔案已寫入完成"
+git add -A
+git commit -m "feat: 消費品項管理頁改為 chip 網格,加入最近使用分區與單一詳情面板"
+echo "✅ 已 commit,請執行 'git push origin main',再到 server 跑 ./deploy.sh"
