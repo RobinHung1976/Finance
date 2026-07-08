@@ -19,6 +19,7 @@ export interface CategoryOut {
 export interface TagOut {
   id: string
   name: string
+  usage_count: number
 }
 export interface TagCreatePayload {
   name: string

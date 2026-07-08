@@ -12,6 +12,7 @@ class TagUpdate(BaseModel):
 class TagOut(BaseModel):
     id: str
     name: str
+    usage_count: int = 0
 
     class Config:
         from_attributes = True
