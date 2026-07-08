@@ -1,3 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FRONTEND=ledger-frontend
+[ -d "$FRONTEND" ] || { echo "請在 repo 根目錄執行"; exit 1; }
+
+# ---------- CategoryPicker.vue:精確字串替換,新增 hideSelectedHint prop ----------
+python3 << 'PYEOF'
+path = "ledger-frontend/src/components/CategoryPicker.vue"
+with open(path) as f:
+    content = f.read()
+
+old_props = """const props = defineProps<{
+  categories: CategoryOut[]
+  type: EntryType
+  modelValue: string
+}>()"""
+new_props = """const props = defineProps<{
+  categories: CategoryOut[]
+  type: EntryType
+  modelValue: string
+  hideSelectedHint?: boolean
+}>()"""
+if old_props not in content:
+    raise SystemExit("❌ defineProps 區塊內容不符,請人工檢查 CategoryPicker.vue")
+content = content.replace(old_props, new_props)
+
+old_hint = """    <p v-if="modelValue" class="selected-hint">已選擇：{{ selectedCategoryName }}</p>
+    <p v-else class="selected-hint" style="color: var(--color-danger)">尚未選擇分類</p>"""
+new_hint = """    <template v-if="!hideSelectedHint">
+      <p v-if="modelValue" class="selected-hint">已選擇：{{ selectedCategoryName }}</p>
+      <p v-else class="selected-hint" style="color: var(--color-danger)">尚未選擇分類</p>
+    </template>"""
+if old_hint not in content:
+    raise SystemExit("❌ selected-hint 區塊內容不符,請人工檢查 CategoryPicker.vue")
+content = content.replace(old_hint, new_hint)
+
+with open(path, "w") as f:
+    f.write(content)
+print("✅ CategoryPicker.vue 已修正")
+PYEOF
+
+# ---------- CategoryList.vue:完整覆寫(搜尋改名/刪除 + 隱藏多餘選取提示) ----------
+cat > "$FRONTEND/src/components/CategoryList.vue" << 'EOF'
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import CategoryPicker from './CategoryPicker.vue'
@@ -255,3 +299,10 @@ async function saveSearchEdit(id: string) {
   padding: 4px 8px;
 }
 </style>
+EOF
+echo "✅ CategoryList.vue 已覆寫"
+
+echo "✅ 檔案已寫入完成"
+git add -A
+git commit -m "feat: 分類管理頁新增搜尋改名/刪除,隱藏瀏覽模式下多餘的選取提示"
+echo "✅ 已 commit,請執行 'git push origin main',再到 server 跑 ./deploy.sh"

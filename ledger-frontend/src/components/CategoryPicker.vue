@@ -9,6 +9,7 @@ const props = defineProps<{
   categories: CategoryOut[]
   type: EntryType
   modelValue: string
+  hideSelectedHint?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -200,8 +201,10 @@ const selectedCategoryName = computed(
     </form>
     <div v-if="createError" class="error-banner" style="margin-top: 6px">{{ createError }}</div>
 
-    <p v-if="modelValue" class="selected-hint">已選擇：{{ selectedCategoryName }}</p>
-    <p v-else class="selected-hint" style="color: var(--color-danger)">尚未選擇分類</p>
+    <template v-if="!hideSelectedHint">
+      <p v-if="modelValue" class="selected-hint">已選擇：{{ selectedCategoryName }}</p>
+      <p v-else class="selected-hint" style="color: var(--color-danger)">尚未選擇分類</p>
+    </template>
   </div>
 </template>
 
