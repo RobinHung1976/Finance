@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import CategoryPicker from './CategoryPicker.vue'
+import CategoryFilterPicker from './CategoryFilterPicker.vue'
 import TagPicker from './TagPicker.vue'
 import { fetchAccounts, fetchCategories, fetchTags, fetchTransactions, createTransaction, updateTransaction, deleteTransaction } from '@/api/ledger'
 import { formatCurrency } from '@/utils/ledgerLabels'
@@ -301,10 +302,7 @@ async function saveEdit(id: string) {
         <option value="">所有帳戶</option>
         <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
       </select>
-      <select v-model="filterCategoryId" class="filter-input">
-        <option value="">所有分類</option>
-        <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
-      </select>
+      <CategoryFilterPicker v-model="filterCategoryId" :categories="categories" />
       <input
         v-model.number="filterMinAmount"
         type="number"
