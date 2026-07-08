@@ -136,6 +136,6 @@ class TagBreakdownItem(BaseModel):
 
 class TagBreakdownOut(BaseModel):
     items: list[TagBreakdownItem]
-    type: TransactionType
+    type: EntryType
     start_date: date
     end_date: date
