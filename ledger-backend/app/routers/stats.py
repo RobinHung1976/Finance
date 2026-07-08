@@ -168,7 +168,7 @@ from fastapi import Query
 def get_tag_breakdown(
     start_date: date,
     end_date: date,
-    type: TransactionType = TransactionType.expense,
+    type: EntryType = EntryType.expense,
     limit: int = Query(15, ge=1, le=50),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
