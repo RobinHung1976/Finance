@@ -96,3 +96,18 @@ export interface CategoryBreakdownOut {
   total: number
   items: CategoryBreakdownItem[]
 }
+
+
+export interface TagBreakdownItem {
+  tag_id: string
+  name: string
+  total_amount: number
+  transaction_count: number
+}
+
+export interface TagBreakdownOut {
+  items: TagBreakdownItem[]
+  type: 'income' | 'expense'
+  start_date: string
+  end_date: string
+}

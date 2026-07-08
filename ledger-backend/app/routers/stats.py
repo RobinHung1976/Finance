@@ -157,3 +157,57 @@ def category_breakdown(
         for r in rows
     ]
     return CategoryBreakdownOut(type=type, total=total, items=items)
+
+
+from app.models import Tag, TransactionTag
+from app.schemas_ledger import TagBreakdownItem, TagBreakdownOut
+from fastapi import Query
+
+
+@router.get("/tag-breakdown", response_model=TagBreakdownOut)
+def get_tag_breakdown(
+    start_date: date,
+    end_date: date,
+    type: TransactionType = TransactionType.expense,
+    limit: int = Query(15, ge=1, le=50),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if end_date < start_date:
+        raise HTTPException(status_code=400, detail="end_date 不可早於 start_date")
+
+    rows = (
+        db.query(
+            Tag.id,
+            Tag.name,
+            func.sum(Transaction.amount).label("total_amount"),
+            func.count(Transaction.id).label("transaction_count"),
+        )
+        .join(TransactionTag, TransactionTag.tag_id == Tag.id)
+        .join(Transaction, Transaction.id == TransactionTag.transaction_id)
+        .filter(
+            Tag.household_id == current_user.household_id,
+            Transaction.type == type,
+            Transaction.date >= start_date,
+            Transaction.date <= end_date,
+        )
+        .group_by(Tag.id, Tag.name)
+        .order_by(func.sum(Transaction.amount).desc())
+        .limit(limit)
+        .all()
+    )
+
+    return TagBreakdownOut(
+        items=[
+            TagBreakdownItem(
+                tag_id=str(r.id),
+                name=r.name,
+                total_amount=float(r.total_amount),
+                transaction_count=r.transaction_count,
+            )
+            for r in rows
+        ],
+        type=type,
+        start_date=start_date,
+        end_date=end_date,
+    )

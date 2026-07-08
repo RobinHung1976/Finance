@@ -125,3 +125,17 @@ class CategoryBreakdownOut(BaseModel):
     type: EntryType
     total: float
     items: list[CategoryBreakdownItem]
+
+
+class TagBreakdownItem(BaseModel):
+    tag_id: str
+    name: str
+    total_amount: float
+    transaction_count: int
+
+
+class TagBreakdownOut(BaseModel):
+    items: list[TagBreakdownItem]
+    type: TransactionType
+    start_date: date
+    end_date: date

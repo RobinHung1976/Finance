@@ -93,3 +93,16 @@ export function fetchCategoryBreakdown(
     })
     .then((r) => r.data)
 }
+
+
+export async function fetchTagBreakdown(
+  startDate: string,
+  endDate: string,
+  type: 'income' | 'expense' = 'expense',
+  limit = 15,
+): Promise<TagBreakdownOut> {
+  const { data } = await apiClient.get<TagBreakdownOut>('/stats/tag-breakdown', {
+    params: { start_date: startDate, end_date: endDate, type, limit },
+  })
+  return data
+}
