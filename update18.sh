@@ -1,3 +1,121 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BACKEND=ledger-backend
+FRONTEND=ledger-frontend
+[ -d "$BACKEND" ] && [ -d "$FRONTEND" ] || { echo "請在 repo 根目錄執行"; exit 1; }
+
+# ========== api/ledger.ts:補 updateTag ==========
+python3 << 'PYEOF'
+path = "ledger-frontend/src/api/ledger.ts"
+with open(path) as f:
+    content = f.read()
+
+old = """export function deleteTag(id: string) {
+  return apiClient.delete(`/tags/${id}`)
+}"""
+new = """export function updateTag(id: string, payload: TagCreatePayload) {
+  return apiClient.patch<TagOut>(`/tags/${id}`, payload).then((r) => r.data)
+}
+export function deleteTag(id: string) {
+  return apiClient.delete(`/tags/${id}`)
+}"""
+if old not in content:
+    raise SystemExit("❌ deleteTag 錨點不符")
+content = content.replace(old, new, 1)
+with open(path, "w") as f:
+    f.write(content)
+print("✅ api/ledger.ts 已加入 updateTag")
+PYEOF
+
+# ========== CategoryPicker.vue:同層重複直接擋掉 ==========
+python3 << 'PYEOF'
+path = "ledger-frontend/src/components/CategoryPicker.vue"
+with open(path) as f:
+    content = f.read()
+
+old = """async function handleCreate() {
+  createError.value = ''
+  if (!newCategoryName.value.trim()) {
+    createError.value = '請輸入分類名稱'
+    return
+  }
+  isCreating.value = true
+  try {
+    const created = await createCategory({
+      name: newCategoryName.value.trim(),
+      type: props.type,
+      parent_id: currentParentId.value,
+    })"""
+new = """async function handleCreate() {
+  createError.value = ''
+  const trimmedName = newCategoryName.value.trim()
+  if (!trimmedName) {
+    createError.value = '請輸入分類名稱'
+    return
+  }
+  const isDuplicate = currentLevelCategories.value.some(
+    (c) => c.name.trim().toLowerCase() === trimmedName.toLowerCase()
+  )
+  if (isDuplicate) {
+    createError.value = '此層級已有同名分類,請直接選擇現有分類'
+    return
+  }
+  isCreating.value = true
+  try {
+    const created = await createCategory({
+      name: trimmedName,
+      type: props.type,
+      parent_id: currentParentId.value,
+    })"""
+if old not in content:
+    raise SystemExit("❌ CategoryPicker handleCreate 錨點不符")
+content = content.replace(old, new, 1)
+with open(path, "w") as f:
+    f.write(content)
+print("✅ CategoryPicker.vue 已加入同層重複阻擋")
+PYEOF
+
+# ========== TagPicker.vue:重複時前端立即提示 ==========
+python3 << 'PYEOF'
+path = "ledger-frontend/src/components/TagPicker.vue"
+with open(path) as f:
+    content = f.read()
+
+old = """async function handleCreate() {
+  createError.value = ''
+  if (!newTagName.value.trim()) {
+    createError.value = '請輸入消費品項名稱'
+    return
+  }
+  isCreating.value = true
+  try {
+    const created = await createTag({ name: newTagName.value.trim() })"""
+new = """async function handleCreate() {
+  createError.value = ''
+  const trimmedName = newTagName.value.trim()
+  if (!trimmedName) {
+    createError.value = '請輸入消費品項名稱'
+    return
+  }
+  const isDuplicate = props.tags.some((t) => t.name.trim().toLowerCase() === trimmedName.toLowerCase())
+  if (isDuplicate) {
+    createError.value = '此消費品項名稱已存在,請直接選擇現有品項'
+    return
+  }
+  isCreating.value = true
+  try {
+    const created = await createTag({ name: trimmedName })"""
+if old not in content:
+    raise SystemExit("❌ TagPicker handleCreate 錨點不符")
+content = content.replace(old, new, 1)
+with open(path, "w") as f:
+    f.write(content)
+print("✅ TagPicker.vue 已加入重複前端提示")
+PYEOF
+
+# ========== TagList.vue:加入重複阻擋 + 改名功能(整檔覆寫) ==========
+cat > "$FRONTEND/src/components/TagList.vue" << 'VUEEOF'
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { fetchTags, createTag, updateTag, deleteTag } from '@/api/ledger'
@@ -163,3 +281,8 @@ async function handleDelete(id: string) {
     </div>
   </div>
 </template>
+VUEEOF
+
+git add -A
+git commit -m "fix: CategoryPicker/TagPicker/TagList 加入重複名稱阻擋,TagList 新增改名功能"
+echo "✅ 已 commit,請 push + deploy"

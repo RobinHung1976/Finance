@@ -93,14 +93,22 @@ const isCreating = ref(false)
 
 async function handleCreate() {
   createError.value = ''
-  if (!newCategoryName.value.trim()) {
+  const trimmedName = newCategoryName.value.trim()
+  if (!trimmedName) {
     createError.value = '請輸入分類名稱'
+    return
+  }
+  const isDuplicate = currentLevelCategories.value.some(
+    (c) => c.name.trim().toLowerCase() === trimmedName.toLowerCase()
+  )
+  if (isDuplicate) {
+    createError.value = '此層級已有同名分類,請直接選擇現有分類'
     return
   }
   isCreating.value = true
   try {
     const created = await createCategory({
-      name: newCategoryName.value.trim(),
+      name: trimmedName,
       type: props.type,
       parent_id: currentParentId.value,
     })

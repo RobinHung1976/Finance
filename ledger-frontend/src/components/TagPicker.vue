@@ -37,13 +37,19 @@ function toggleTag(id: string) {
 
 async function handleCreate() {
   createError.value = ''
-  if (!newTagName.value.trim()) {
+  const trimmedName = newTagName.value.trim()
+  if (!trimmedName) {
     createError.value = '請輸入消費品項名稱'
+    return
+  }
+  const isDuplicate = props.tags.some((t) => t.name.trim().toLowerCase() === trimmedName.toLowerCase())
+  if (isDuplicate) {
+    createError.value = '此消費品項名稱已存在,請直接選擇現有品項'
     return
   }
   isCreating.value = true
   try {
-    const created = await createTag({ name: newTagName.value.trim() })
+    const created = await createTag({ name: trimmedName })
     emit('created', created)
     emit('update:modelValue', [...props.modelValue, created.id])
     newTagName.value = ''

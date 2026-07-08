@@ -47,6 +47,9 @@ export function fetchTags() {
 export function createTag(payload: TagCreatePayload) {
   return apiClient.post<TagOut>('/tags', payload).then((r) => r.data)
 }
+export function updateTag(id: string, payload: TagCreatePayload) {
+  return apiClient.patch<TagOut>(`/tags/${id}`, payload).then((r) => r.data)
+}
 export function deleteTag(id: string) {
   return apiClient.delete(`/tags/${id}`)
 }
