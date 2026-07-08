@@ -7,7 +7,7 @@ from openpyxl import Workbook
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Category, Transaction, EntryType
+from app.models import Account, Category, Transaction, EntryType
 
 MONTH_SHEET_RE = re.compile(r"^(\d{1,2})月$")
 EXCEL_EPOCH = datetime(1899, 12, 30)
@@ -130,6 +130,7 @@ def process_import(
     imported = 0
     skipped_duplicates = 0
     created_categories = 0
+    balance_delta = 0.0  # 累計這批匯入對帳戶餘額的淨影響(收入+/支出-)
 
     top_cache: dict[tuple[str, EntryType], Category | None] = {}
     item_cache: dict[tuple[str, EntryType], Category | None] = {}
@@ -205,8 +206,15 @@ def process_import(
                 type=parsed["type"], date=parsed["date"], note=None,
             ))
             imported += 1
+            if parsed["type"] == EntryType.income:
+                balance_delta += parsed["amount"]
+            else:
+                balance_delta -= parsed["amount"]
 
     if not dry_run:
+        if balance_delta != 0:
+            account = db.get(Account, account_id)
+            account.balance = float(account.balance) + balance_delta
         db.commit()
 
     return {
