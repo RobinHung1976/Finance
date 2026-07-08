@@ -1,3 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+FRONTEND=ledger-frontend
+[ -d "$FRONTEND" ] || { echo "請在 repo 根目錄執行"; exit 1; }
+
+cat > "$FRONTEND/src/components/CategoryPicker.vue" << 'EOF'
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { createCategory } from '@/api/ledger'
@@ -320,3 +326,8 @@ const selectedCategoryName = computed(
   margin: 8px 0 0;
 }
 </style>
+EOF
+
+git add -A
+git commit -m "feat: CategoryPicker 加入搜尋框,80+ 分類可直接輸入名稱篩選,不需逐層鑽取"
+echo "✅ 已 commit,請 push + deploy"
