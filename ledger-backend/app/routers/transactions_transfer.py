@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -60,8 +62,15 @@ async def export_excel(
 ):
     buf = build_export_workbook(db, current_user.household_id, year)
     filename = f"{year}-記帳表.xlsx"
+    ascii_fallback = f"{year}-ledger-export.xlsx"
+    encoded_filename = quote(filename)
     return StreamingResponse(
         buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="{ascii_fallback}"; '
+                f"filename*=UTF-8''{encoded_filename}"
+            )
+        },
     )
