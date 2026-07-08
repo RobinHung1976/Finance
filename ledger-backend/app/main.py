@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import auth, households, accounts, categories, transactions, transactions_transfer, stats
+from app.routers import auth, households, accounts, categories, transactions, transactions_transfer, stats, tags
 
 app = FastAPI(title="家庭理財網站 API", version="0.1.0")
 
@@ -21,6 +21,7 @@ app.include_router(categories.router)
 app.include_router(transactions.router)
 app.include_router(transactions_transfer.router)
 app.include_router(stats.router)
+app.include_router(tags.router)
 
 
 @app.get("/health")

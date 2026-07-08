@@ -16,6 +16,13 @@ export interface CategoryOut {
   type: EntryType
 }
 
+export interface TagOut {
+  id: string
+  name: string
+}
+export interface TagCreatePayload {
+  name: string
+}
 export interface TransactionOut {
   id: string
   account_id: string
@@ -25,6 +32,7 @@ export interface TransactionOut {
   date: string
   note: string | null
   user_id: string | null
+  tags: TagOut[]
 }
 
 export interface AccountCreatePayload {
@@ -47,6 +55,7 @@ export interface TransactionCreatePayload {
   type: EntryType
   date: string
   note: string | null
+  tag_ids?: string[]
 }
 
 export interface TransactionFilters {

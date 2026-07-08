@@ -11,6 +11,7 @@ import MonthlyTrendChart from '@/components/MonthlyTrendChart.vue'
 import CategoryBreakdownChart from '@/components/CategoryBreakdownChart.vue'
 import DateRangePicker from '@/components/DateRangePicker.vue'
 import ExcelImportExport from '@/components/ExcelImportExport.vue'
+import TagList from '@/components/TagList.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -24,7 +25,7 @@ onMounted(async () => {
   }
 })
 
-type Tab = 'stats' | 'transactions' | 'accounts' | 'categories' | 'transfer'
+type Tab = 'stats' | 'transactions' | 'accounts' | 'categories' | 'transfer' | 'tags'
 const activeTab = ref<Tab>('stats')
 
 // 統計頁日期區間,預設今年 1/1 ~ 今天,兩張圖表共用同一組區間
@@ -75,6 +76,7 @@ function handleLogout() {
       </button>
       <button :class="{ active: activeTab === 'accounts' }" @click="activeTab = 'accounts'">帳戶</button>
       <button :class="{ active: activeTab === 'categories' }" @click="activeTab = 'categories'">分類</button>
+      <button :class="{ active: activeTab === 'tags' }" @click="activeTab = 'tags'">消費品項</button>
       <button :class="{ active: activeTab === 'transfer' }" @click="activeTab = 'transfer'">匯入/匯出</button>
     </nav>
 
@@ -95,6 +97,7 @@ function handleLogout() {
       <TransactionList v-else-if="activeTab === 'transactions'" :refresh-key="refreshKey" />
       <AccountList v-else-if="activeTab === 'accounts'" @changed="handleReferenceDataChanged" />
       <CategoryList v-else-if="activeTab === 'categories'" @changed="handleReferenceDataChanged" />
+      <TagList v-else-if="activeTab === 'tags'" @changed="handleReferenceDataChanged" />
       <ExcelImportExport v-else-if="activeTab === 'transfer'" />
     </section>
   </div>

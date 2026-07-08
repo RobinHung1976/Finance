@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import CategoryPicker from './CategoryPicker.vue'
-import { fetchAccounts, fetchCategories, fetchTransactions, createTransaction, updateTransaction, deleteTransaction } from '@/api/ledger'
+import TagPicker from './TagPicker.vue'
+import { fetchAccounts, fetchCategories, fetchTags, fetchTransactions, createTransaction, updateTransaction, deleteTransaction } from '@/api/ledger'
 import { formatCurrency } from '@/utils/ledgerLabels'
-import type { AccountOut, CategoryOut, EntryType, TransactionOut } from '@/types/ledger'
+import type { AccountOut, CategoryOut, EntryType, TagOut, TransactionOut } from '@/types/ledger'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/types/api'
 
@@ -26,6 +27,7 @@ const props = defineProps<{ refreshKey: number }>()
 
 const accounts = ref<AccountOut[]>([])
 const categories = ref<CategoryOut[]>([])
+const tags = ref<TagOut[]>([])
 const transactions = ref<TransactionOut[]>([])
 const isLoading = ref(true)
 const loadError = ref('')
@@ -44,6 +46,7 @@ const formCategoryId = ref('')
 const formAmount = ref<number | null>(null)
 const formDate = ref(todayLocalISODate())
 const formNote = ref('')
+const formTagIds = ref<string[]>([])
 const formError = ref('')
 const isSubmitting = ref(false)
 
@@ -55,6 +58,7 @@ const editAmount = ref<number | null>(null)
 const editType = ref<EntryType>('expense')
 const editDate = ref('')
 const editNote = ref('')
+const editTagIds = ref<string[]>([])
 const editError = ref('')
 const isSavingEdit = ref(false)
 
@@ -75,9 +79,10 @@ function categoryName(id: string): string {
 
 
 async function loadReferenceData() {
-  const [accountsData, categoriesData] = await Promise.all([fetchAccounts(), fetchCategories()])
+  const [accountsData, categoriesData, tagsData] = await Promise.all([fetchAccounts(), fetchCategories(), fetchTags()])
   accounts.value = accountsData
   categories.value = categoriesData
+  tags.value = tagsData
 }
 
 async function loadTransactions() {
@@ -160,6 +165,10 @@ function handleCategoryCreated(category: CategoryOut) {
   categories.value.push(category)
 }
 
+function handleTagCreated(tag: TagOut) {
+  tags.value.push(tag)
+}
+
 async function handleCreate() {
   formError.value = ''
 
@@ -185,9 +194,11 @@ async function handleCreate() {
       type: formType.value,
       date: formDate.value,
       note: formNote.value.trim() || null,
+      tag_ids: formTagIds.value,
     })
     formAmount.value = null
     formNote.value = ''
+    formTagIds.value = []
     showForm.value = false
     await loadReferenceData() // 帳戶餘額已變動
     await loadTransactions()
@@ -219,6 +230,7 @@ function startEdit(tx: TransactionOut) {
   editType.value = tx.type
   editDate.value = tx.date
   editNote.value = tx.note ?? ''
+  editTagIds.value = tx.tags.map((t) => t.id)
   editError.value = ''
 }
 
@@ -244,6 +256,7 @@ async function saveEdit(id: string) {
       type: editType.value,
       date: editDate.value,
       note: editNote.value.trim() || null,
+      tag_ids: editTagIds.value,
     })
     editingId.value = null
     await loadReferenceData() // 帳戶餘額已因金額/類型變動而重新計算
@@ -317,6 +330,10 @@ async function saveEdit(id: string) {
         />
       </div>
       <div class="field">
+        <label>消費品項（選填）</label>
+        <TagPicker v-model="formTagIds" :tags="tags" @created="handleTagCreated" />
+      </div>
+      <div class="field">
         <label for="tx-amount">金額</label>
         <input id="tx-amount" v-model.number="formAmount" type="number" min="1" step="1" required />
       </div>
@@ -375,7 +392,10 @@ async function saveEdit(id: string) {
           <div class="tx-card-main">
             <div class="tx-card-info">
               <strong class="tx-category">{{ categoryName(tx.category_id) }}</strong>
-              <span class="tx-sub">{{ accountName(tx.account_id) }}<template v-if="tx.note"> · {{ tx.note }}</template></span>
+              <span class="tx-sub">
+                {{ accountName(tx.account_id) }}<template v-if="tx.note"> · {{ tx.note }}</template>
+                <template v-if="tx.tags.length"> · {{ tx.tags.map((t) => t.name).join('、') }}</template>
+              </span>
             </div>
             <span
               class="tx-amount"
@@ -411,6 +431,9 @@ async function saveEdit(id: string) {
               :categories="categories"
               @created="handleCategoryCreated"
             />
+          </div>
+          <div style="margin-top: 8px">
+            <TagPicker v-model="editTagIds" :tags="tags" @created="handleTagCreated" />
           </div>
           <div style="display: flex; gap: 8px; margin-top: 8px">
             <button class="btn-primary" type="submit" style="width: auto; padding: 6px 14px" :disabled="isSavingEdit">

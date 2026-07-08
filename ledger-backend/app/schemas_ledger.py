@@ -3,6 +3,7 @@ from datetime import date as date_type, datetime
 from pydantic import BaseModel, Field, field_validator
 
 from app.models import AccountType, EntryType
+from app.schemas_tag import TagOut
 
 
 # ---------- Account ----------
@@ -61,6 +62,7 @@ class TransactionCreate(BaseModel):
     type: EntryType
     date: date_type
     note: str | None = Field(default=None, max_length=500)
+    tag_ids: list[str] = Field(default_factory=list)
 
     @field_validator("amount")
     @classmethod
@@ -77,6 +79,7 @@ class TransactionUpdate(BaseModel):
     type: EntryType | None = None
     date: date_type | None = None
     note: str | None = Field(default=None, max_length=500)
+    tag_ids: list[str] | None = None  # None=不變動,[]=清空所有品項
 
 
 class TransactionOut(BaseModel):
@@ -88,6 +91,7 @@ class TransactionOut(BaseModel):
     date: date_type
     note: str | None
     user_id: str | None
+    tags: list[TagOut] = []
 
     class Config:
         from_attributes = True

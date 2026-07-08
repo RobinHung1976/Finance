@@ -101,6 +101,13 @@ class Transaction(Base):
     date: Mapped[date] = mapped_column(Date, nullable=False)
     note: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
+    # 消費品項(店家/商家),多對多,透過既有 transaction_tags join table。
+    # 寫入一律由 router 手動操作 TransactionTag,這裡只做讀取(viewonly),
+    # 避免像 Category.children 那樣因 cascade 設定誤判孤兒物件。
+    tags: Mapped[list["Tag"]] = relationship(
+        "Tag", secondary="transaction_tags", viewonly=True, lazy="selectin"
+    )
+
 
 class Budget(Base):
     __tablename__ = "budgets"

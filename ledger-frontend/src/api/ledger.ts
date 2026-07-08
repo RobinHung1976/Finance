@@ -4,6 +4,8 @@ import type {
   AccountCreatePayload,
   CategoryOut,
   CategoryCreatePayload,
+  TagOut,
+  TagCreatePayload,
   TransactionOut,
   TransactionCreatePayload,
   TransactionFilters,
@@ -38,6 +40,15 @@ export function createCategory(payload: CategoryCreatePayload) {
 
 export function deleteCategory(id: string) {
   return apiClient.delete(`/categories/${id}`)
+}
+export function fetchTags() {
+  return apiClient.get<TagOut[]>('/tags').then((r) => r.data)
+}
+export function createTag(payload: TagCreatePayload) {
+  return apiClient.post<TagOut>('/tags', payload).then((r) => r.data)
+}
+export function deleteTag(id: string) {
+  return apiClient.delete(`/tags/${id}`)
 }
 
 export function fetchTransactions(filters: TransactionFilters = {}) {

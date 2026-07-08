@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.audit import log_action
 from app.deps import get_current_user
-from app.models import Account, Category, Transaction, User
+from app.models import Account, Category, Tag, Transaction, TransactionTag, User
 from app.schemas_ledger import TransactionCreate, TransactionOut, TransactionUpdate
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
@@ -28,6 +28,21 @@ def _validate_account_and_category(payload_dict: dict, household_id: str, db: Se
         category = db.get(Category, payload_dict["category_id"])
         if category is None or category.household_id != household_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="分類不存在")
+
+
+def _validate_tag_ids(tag_ids: list[str], household_id: str, db: Session) -> None:
+    if not tag_ids:
+        return
+    unique_ids = set(tag_ids)
+    count = db.query(Tag).filter(Tag.household_id == household_id, Tag.id.in_(unique_ids)).count()
+    if count != len(unique_ids):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="消費品項不存在")
+
+
+def _set_transaction_tags(tx_id: str, tag_ids: list[str], db: Session) -> None:
+    db.query(TransactionTag).filter(TransactionTag.transaction_id == tx_id).delete()
+    for tag_id in set(tag_ids):
+        db.add(TransactionTag(transaction_id=tx_id, tag_id=tag_id))
 
 
 @router.get("", response_model=list[TransactionOut])
@@ -60,7 +75,9 @@ def create_transaction(
     db: Session = Depends(get_db),
 ):
     payload_dict = payload.model_dump()
+    tag_ids = payload_dict.pop("tag_ids")
     _validate_account_and_category(payload_dict, current_user.household_id, db)
+    _validate_tag_ids(tag_ids, current_user.household_id, db)
 
     tx = Transaction(
         household_id=current_user.household_id,
@@ -68,6 +85,8 @@ def create_transaction(
         **payload_dict,
     )
     db.add(tx)
+    db.flush()  # 取得 tx.id 供 TransactionTag 使用
+    _set_transaction_tags(tx.id, tag_ids, db)
 
     # 更新帳戶餘額:收入加、支出減
     account = db.get(Account, payload.account_id)
@@ -92,7 +111,10 @@ def update_transaction(
 ):
     tx = _get_owned_transaction(transaction_id, current_user, db)
     update_data = payload.model_dump(exclude_unset=True)
+    tag_ids = update_data.pop("tag_ids", None)  # None=不變動,[]=清空
     _validate_account_and_category(update_data, current_user.household_id, db)
+    if tag_ids is not None:
+        _validate_tag_ids(tag_ids, current_user.household_id, db)
 
     # 若金額/類型/帳戶有變動,先復原舊帳戶餘額,再套用新值
     old_account = db.get(Account, tx.account_id)
@@ -103,6 +125,9 @@ def update_transaction(
 
     for field, value in update_data.items():
         setattr(tx, field, value)
+
+    if tag_ids is not None:
+        _set_transaction_tags(tx.id, tag_ids, db)
 
     new_account = db.get(Account, tx.account_id)
     if tx.type.value == "income":
