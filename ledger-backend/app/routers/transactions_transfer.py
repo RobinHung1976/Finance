@@ -5,6 +5,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.deps import get_current_user, get_db
+from app.models import Household
 from app.schemas_import_export import ImportPreviewResponse, ImportCommitResponse
 from app.services.excel_transfer import process_import, build_export_workbook
 
@@ -61,7 +62,9 @@ async def export_excel(
     current_user=Depends(get_current_user),
 ):
     buf = build_export_workbook(db, current_user.household_id, year)
-    filename = f"{year}-記帳表.xlsx"
+    household = db.get(Household, current_user.household_id)
+    household_name = household.name if household else "記帳表"
+    filename = f"{year}-{household_name}.xlsx"
     ascii_fallback = f"{year}-ledger-export.xlsx"
     encoded_filename = quote(filename)
     return StreamingResponse(
