@@ -26,6 +26,15 @@ def _excel_serial_to_date(value) -> date:
         return value.date()
     if isinstance(value, date):
         return value
+    # 可能是使用者手動打成 YYYYMMDD 整數格式(例如 20260708),而非真正的 Excel 日期
+    if isinstance(value, (int, float)) and float(value) == int(value):
+        ival = int(value)
+        if 19000101 <= ival <= 99991231:
+            try:
+                return datetime.strptime(str(ival), "%Y%m%d").date()
+            except ValueError:
+                pass  # 不是合法日期(例如 20261332),繼續往下當 Excel 序列值處理
+    # 一般情況:Excel 序列值(距離 1899-12-30 的天數)
     return (EXCEL_EPOCH + timedelta(days=float(value))).date()
 
 
@@ -94,7 +103,7 @@ def _validate_row(raw: dict) -> tuple[dict | None, str | None]:
         return None, f"金額必須為正數: {amount}"
     try:
         tx_date = _excel_serial_to_date(raw["date_raw"])
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         return None, f"日期格式錯誤: {raw['date_raw']!r}"
 
     entry_type = EntryType.income if raw["category_top"] == "收入" else EntryType.expense
