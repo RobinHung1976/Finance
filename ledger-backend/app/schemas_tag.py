@@ -13,6 +13,7 @@ class TagOut(BaseModel):
     id: str
     name: str
     usage_count: int = 0
+    last_used_date: str | None = None
 
     class Config:
         from_attributes = True

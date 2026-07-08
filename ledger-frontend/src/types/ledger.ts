@@ -20,6 +20,7 @@ export interface TagOut {
   id: string
   name: string
   usage_count: number
+  last_used_date: string | null
 }
 export interface TagCreatePayload {
   name: string
