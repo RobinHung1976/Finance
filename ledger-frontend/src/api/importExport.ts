@@ -27,14 +27,28 @@ export function commitImport(file: File, accountId: string, forceRows: string[] 
 }
 
 export async function exportExcel(year: number): Promise<void> {
-  const { data } = await apiClient.get('/transactions/export/excel', {
+  const response = await apiClient.get('/transactions/export/excel', {
     params: { year },
     responseType: 'blob',
   })
-  const url = URL.createObjectURL(new Blob([data]))
+
+  // 從後端 Content-Disposition 解析真實檔名(含帳本名稱),不再前端寫死
+  const disposition = response.headers['content-disposition'] as string | undefined
+  let filename = `${year}-記帳表.xlsx`
+  if (disposition) {
+    const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/)
+    if (utf8Match) {
+      filename = decodeURIComponent(utf8Match[1])
+    } else {
+      const asciiMatch = disposition.match(/filename="?([^";]+)"?/)
+      if (asciiMatch) filename = asciiMatch[1]
+    }
+  }
+
+  const url = URL.createObjectURL(new Blob([response.data]))
   const a = document.createElement('a')
   a.href = url
-  a.download = `${year}-記帳表.xlsx`
+  a.download = filename
   a.click()
   URL.revokeObjectURL(url)
 }
