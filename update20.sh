@@ -1,3 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FRONTEND=ledger-frontend
+[ -d "$FRONTEND" ] || { echo "請在 repo 根目錄執行"; exit 1; }
+
+# ========== api/ledger.ts:補 updateCategory ==========
+python3 << 'PYEOF'
+path = "ledger-frontend/src/api/ledger.ts"
+with open(path) as f:
+    content = f.read()
+
+old = """export function deleteCategory(id: string) {
+  return apiClient.delete(`/categories/${id}`)
+}"""
+new = """export function updateCategory(id: string, payload: Partial<CategoryCreatePayload>) {
+  return apiClient.patch<CategoryOut>(`/categories/${id}`, payload).then((r) => r.data)
+}
+export function deleteCategory(id: string) {
+  return apiClient.delete(`/categories/${id}`)
+}"""
+if old not in content:
+    raise SystemExit("❌ deleteCategory 錨點不符")
+content = content.replace(old, new, 1)
+with open(path, "w") as f:
+    f.write(content)
+print("✅ api/ledger.ts 已加入 updateCategory")
+PYEOF
+
+# ========== CategoryTreeNode.vue:加入改名功能(整檔覆寫) ==========
+cat > "$FRONTEND/src/components/CategoryTreeNode.vue" << 'VUEEOF'
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { CategoryOut } from '@/types/ledger'
@@ -155,3 +186,84 @@ function handleRename(id: string, name: string) {
   padding: 4px 8px;
 }
 </style>
+VUEEOF
+
+# ========== CategoryList.vue:加入 handleRename ==========
+python3 << 'PYEOF'
+path = "ledger-frontend/src/components/CategoryList.vue"
+with open(path) as f:
+    content = f.read()
+
+old_import = "import { fetchCategories, deleteCategory } from '@/api/ledger'"
+new_import = "import { fetchCategories, updateCategory, deleteCategory } from '@/api/ledger'"
+if old_import not in content:
+    raise SystemExit("❌ import 錨點不符")
+content = content.replace(old_import, new_import, 1)
+
+old_fn = """async function handleDelete(id: string) {
+  if (!confirm('確定刪除此分類？')) return
+  try {
+    await deleteCategory(id)
+    await load()
+    emit('changed')
+  } catch (err) {
+    const axiosErr = err as AxiosError<ApiError>
+    alert(axiosErr.response?.data?.detail ?? '刪除失敗(可能仍有子分類或交易紀錄使用中)')
+  }
+}"""
+new_fn = """async function handleDelete(id: string) {
+  if (!confirm('確定刪除此分類？')) return
+  try {
+    await deleteCategory(id)
+    await load()
+    emit('changed')
+  } catch (err) {
+    const axiosErr = err as AxiosError<ApiError>
+    alert(axiosErr.response?.data?.detail ?? '刪除失敗(可能仍有子分類或交易紀錄使用中)')
+  }
+}
+
+async function handleRename(id: string, name: string) {
+  try {
+    const updated = await updateCategory(id, { name })
+    const idx = categories.value.findIndex((c) => c.id === id)
+    if (idx !== -1) categories.value[idx] = updated
+    emit('changed')
+  } catch (err) {
+    const axiosErr = err as AxiosError<ApiError>
+    alert(axiosErr.response?.data?.detail ?? '改名失敗')
+  }
+}"""
+if old_fn not in content:
+    raise SystemExit("❌ handleDelete 錨點不符")
+content = content.replace(old_fn, new_fn, 1)
+
+old_template = """    <CategoryTreeNode
+      v-for="root in rootCategories"
+      :key="root.id"
+      :category="root"
+      :categories="categories"
+      :depth="0"
+      @delete="handleDelete"
+    />"""
+new_template = """    <CategoryTreeNode
+      v-for="root in rootCategories"
+      :key="root.id"
+      :category="root"
+      :categories="categories"
+      :depth="0"
+      @delete="handleDelete"
+      @rename="handleRename"
+    />"""
+if old_template not in content:
+    raise SystemExit("❌ CategoryTreeNode 模板錨點不符")
+content = content.replace(old_template, new_template, 1)
+
+with open(path, "w") as f:
+    f.write(content)
+print("✅ CategoryList.vue 已加入 handleRename")
+PYEOF
+
+git add -A
+git commit -m "feat: 分類管理頁新增改名功能,同層重複名稱阻擋"
+echo "✅ 已 commit"

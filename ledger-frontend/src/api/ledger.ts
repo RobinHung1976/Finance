@@ -38,6 +38,9 @@ export function createCategory(payload: CategoryCreatePayload) {
   return apiClient.post<CategoryOut>('/categories', payload).then((r) => r.data)
 }
 
+export function updateCategory(id: string, payload: Partial<CategoryCreatePayload>) {
+  return apiClient.patch<CategoryOut>(`/categories/${id}`, payload).then((r) => r.data)
+}
 export function deleteCategory(id: string) {
   return apiClient.delete(`/categories/${id}`)
 }

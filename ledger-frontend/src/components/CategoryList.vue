@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import CategoryPicker from './CategoryPicker.vue'
 import CategoryTreeNode from './CategoryTreeNode.vue'
-import { fetchCategories, deleteCategory } from '@/api/ledger'
+import { fetchCategories, updateCategory, deleteCategory } from '@/api/ledger'
 import type { CategoryOut, EntryType } from '@/types/ledger'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/types/api'
@@ -50,6 +50,18 @@ async function handleDelete(id: string) {
     alert(axiosErr.response?.data?.detail ?? '刪除失敗(可能仍有子分類或交易紀錄使用中)')
   }
 }
+
+async function handleRename(id: string, name: string) {
+  try {
+    const updated = await updateCategory(id, { name })
+    const idx = categories.value.findIndex((c) => c.id === id)
+    if (idx !== -1) categories.value[idx] = updated
+    emit('changed')
+  } catch (err) {
+    const axiosErr = err as AxiosError<ApiError>
+    alert(axiosErr.response?.data?.detail ?? '改名失敗')
+  }
+}
 </script>
 
 <template>
@@ -85,6 +97,7 @@ async function handleDelete(id: string) {
       :categories="categories"
       :depth="0"
       @delete="handleDelete"
+      @rename="handleRename"
     />
   </div>
 </template>
