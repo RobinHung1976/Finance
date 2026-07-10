@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
-import { fetchMonthlyTrend } from '@/api/ledger'
+import { fetchMonthlyTrend } from '@/api/ledgerApi'
 import type { MonthlyTrendOut } from '@/types/ledger'
 
 const props = defineProps<{ startDate: string; endDate: string }>()

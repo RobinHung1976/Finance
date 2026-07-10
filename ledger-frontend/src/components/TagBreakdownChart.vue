@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import { fetchTagBreakdown } from '@/api/ledger'
+import { fetchTagBreakdown } from '@/api/ledgerApi'
 import type { TagBreakdownItem } from '@/types/ledger'
 import { formatCurrency } from '@/utils/ledgerLabels'
 

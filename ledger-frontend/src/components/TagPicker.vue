@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { createTag } from '@/api/ledger'
+import { createTag } from '@/api/ledgerApi'
 import type { TagOut } from '@/types/ledger'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/types/api'

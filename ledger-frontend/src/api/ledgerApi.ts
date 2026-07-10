@@ -44,7 +44,17 @@ export function deleteTag(id: string) {
 }
 
 export function fetchTransactions(filters: TransactionFilters = {}) {
-  return apiClient.get<TransactionOut[]>('/transactions', { params: filters }).then((r) => r.data)
+  const { tag_ids, ...rest } = filters
+  const params = new URLSearchParams()
+  Object.entries(rest).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      params.append(key, String(value))
+    }
+  })
+  if (tag_ids) {
+    tag_ids.forEach((id) => params.append('tag_ids', id))
+  }
+  return apiClient.get<TransactionOut[]>('/transactions', { params }).then((r) => r.data)
 }
 
 export function createTransaction(payload: TransactionCreatePayload) {

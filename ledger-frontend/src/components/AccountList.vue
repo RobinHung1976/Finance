@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { fetchAccounts, createAccount, updateAccount, deleteAccount } from '@/api/ledger'
+import { fetchAccounts, createAccount, updateAccount, deleteAccount } from '@/api/ledgerApi'
 import { ACCOUNT_TYPE_LABEL, formatCurrency } from '@/utils/ledgerLabels'
 import type { AccountOut, AccountType } from '@/types/ledger'
 import type { AxiosError } from 'axios'

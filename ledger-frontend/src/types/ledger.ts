@@ -67,6 +67,7 @@ export interface TransactionFilters {
   category_id?: string
   min_amount?: number
   max_amount?: number
+  tag_ids?: string[]
 }
 
 export interface MonthlySummary {

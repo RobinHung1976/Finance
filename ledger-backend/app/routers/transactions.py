@@ -53,6 +53,7 @@ def list_transactions(
     category_id: str | None = Query(default=None),
     min_amount: float | None = Query(default=None, ge=0),
     max_amount: float | None = Query(default=None, ge=0),
+    tag_ids: list[str] | None = Query(default=None),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -73,6 +74,12 @@ def list_transactions(
         query = query.filter(Transaction.amount >= min_amount)
     if max_amount is not None:
         query = query.filter(Transaction.amount <= max_amount)
+    if tag_ids:
+        query = (
+            query.join(TransactionTag, TransactionTag.transaction_id == Transaction.id)
+            .filter(TransactionTag.tag_id.in_(set(tag_ids)))
+            .distinct()
+        )
 
     return query.order_by(Transaction.date.desc()).all()
 

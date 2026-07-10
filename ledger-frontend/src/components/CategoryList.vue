@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import CategoryPicker from './CategoryPicker.vue'
 import CategoryTreeNode from './CategoryTreeNode.vue'
-import { fetchCategories, updateCategory, deleteCategory } from '@/api/ledger'
+import { fetchCategories, updateCategory, deleteCategory } from '@/api/ledgerApi'
 import type { CategoryOut, EntryType } from '@/types/ledger'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/types/api'

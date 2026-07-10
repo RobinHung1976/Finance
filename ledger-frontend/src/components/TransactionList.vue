@@ -2,8 +2,10 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import CategoryPicker from './CategoryPicker.vue'
 import CategoryFilterPicker from './CategoryFilterPicker.vue'
+import AccountFilterPicker from './AccountFilterPicker.vue'
 import TagPicker from './TagPicker.vue'
-import { fetchAccounts, fetchCategories, fetchTags, fetchTransactions, createTransaction, updateTransaction, deleteTransaction } from '@/api/ledger'
+import TagFilterPicker from './TagFilterPicker.vue'
+import { fetchAccounts, fetchCategories, fetchTags, fetchTransactions, createTransaction, updateTransaction, deleteTransaction } from '@/api/ledgerApi'
 import { formatCurrency } from '@/utils/ledgerLabels'
 import type { AccountOut, CategoryOut, EntryType, TagOut, TransactionOut } from '@/types/ledger'
 import type { AxiosError } from 'axios'
@@ -38,6 +40,7 @@ const filterStartDate = ref(firstDayOfMonthISODate())
 const filterEndDate = ref(todayLocalISODate())
 const filterAccountId = ref('')
 const filterCategoryId = ref('')
+const filterTagIds = ref<string[]>([])
 const filterMinAmount = ref<number | null>(null)
 const filterMaxAmount = ref<number | null>(null)
 
@@ -97,6 +100,7 @@ async function loadTransactions() {
       end_date: filterEndDate.value || undefined,
       account_id: filterAccountId.value || undefined,
       category_id: filterCategoryId.value || undefined,
+      tag_ids: filterTagIds.value.length ? filterTagIds.value : undefined,
       min_amount: filterMinAmount.value ?? undefined,
       max_amount: filterMaxAmount.value ?? undefined,
     })
@@ -121,7 +125,7 @@ watch(
 )
 
 watch(
-  [filterStartDate, filterEndDate, filterAccountId, filterCategoryId, filterMinAmount, filterMaxAmount],
+  [filterStartDate, filterEndDate, filterAccountId, filterCategoryId, filterTagIds, filterMinAmount, filterMaxAmount],
   loadTransactions
 )
 
@@ -298,11 +302,9 @@ async function saveEdit(id: string) {
       <input v-model="filterStartDate" type="date" class="filter-input" title="開始日期" />
       <span style="color: #6b7a74">至</span>
       <input v-model="filterEndDate" type="date" class="filter-input" title="結束日期" />
-      <select v-model="filterAccountId" class="filter-input">
-        <option value="">所有帳戶</option>
-        <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
-      </select>
+      <AccountFilterPicker v-model="filterAccountId" :accounts="accounts" />
       <CategoryFilterPicker v-model="filterCategoryId" :categories="categories" />
+      <TagFilterPicker v-model="filterTagIds" :tags="tags" />
       <input
         v-model.number="filterMinAmount"
         type="number"

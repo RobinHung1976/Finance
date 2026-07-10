@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { createCategory } from '@/api/ledger'
+import { createCategory } from '@/api/ledgerApi'
 import type { CategoryOut, EntryType } from '@/types/ledger'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/types/api'

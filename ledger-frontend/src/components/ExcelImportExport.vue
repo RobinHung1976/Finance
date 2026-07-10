@@ -100,7 +100,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { previewImport, commitImport, exportExcel } from '@/api/importExport'
-import { fetchAccounts } from '@/api/ledger'
+import { fetchAccounts } from '@/api/ledgerApi'
 import { ACCOUNT_TYPE_LABEL } from '@/utils/ledgerLabels'
 import type { ImportPreviewResponse, ImportCommitResponse } from '@/types/importExport'
 import type { AccountOut } from '@/types/ledger'

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
-import { fetchCategoryBreakdown } from '@/api/ledger'
+import { fetchCategoryBreakdown } from '@/api/ledgerApi'
 import type { CategoryBreakdownOut, EntryType } from '@/types/ledger'
 
 const props = withDefaults(defineProps<{ type?: EntryType; startDate: string; endDate: string }>(), {
