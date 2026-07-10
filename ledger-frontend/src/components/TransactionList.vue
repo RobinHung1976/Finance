@@ -43,6 +43,7 @@ const filterCategoryId = ref('')
 const filterTagIds = ref<string[]>([])
 const filterMinAmount = ref<number | null>(null)
 const filterMaxAmount = ref<number | null>(null)
+const showAdvancedFilter = ref(false)
 
 // 新增表單
 const showForm = ref(false)
@@ -128,6 +129,14 @@ watch(
   [filterStartDate, filterEndDate, filterAccountId, filterCategoryId, filterTagIds, filterMinAmount, filterMaxAmount],
   loadTransactions
 )
+
+const activeAdvancedFilterCount = computed(() => {
+  let count = 0
+  if (filterAccountId.value) count++
+  if (filterCategoryId.value) count++
+  if (filterTagIds.value.length) count++
+  return count
+})
 
 const totalExpense = computed(() =>
   transactions.value.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
@@ -302,9 +311,9 @@ async function saveEdit(id: string) {
       <input v-model="filterStartDate" type="date" class="filter-input" title="開始日期" />
       <span style="color: #6b7a74">至</span>
       <input v-model="filterEndDate" type="date" class="filter-input" title="結束日期" />
-      <AccountFilterPicker v-model="filterAccountId" :accounts="accounts" />
-      <CategoryFilterPicker v-model="filterCategoryId" :categories="categories" />
-      <TagFilterPicker v-model="filterTagIds" :tags="tags" />
+      <button type="button" class="filter-input advanced-filter-toggle" @click="showAdvancedFilter = !showAdvancedFilter">
+        進階篩選<span v-if="activeAdvancedFilterCount">（{{ activeAdvancedFilterCount }}）</span>
+      </button>
       <input
         v-model.number="filterMinAmount"
         type="number"
@@ -322,6 +331,21 @@ async function saveEdit(id: string) {
         class="filter-input"
         style="width: 100px"
       />
+    </div>
+
+    <div v-if="showAdvancedFilter" class="advanced-filter-panel">
+      <div class="advanced-filter-block">
+        <h4 class="advanced-filter-label">帳戶</h4>
+        <AccountFilterPicker v-model="filterAccountId" :accounts="accounts" />
+      </div>
+      <div class="advanced-filter-block">
+        <h4 class="advanced-filter-label">分類</h4>
+        <CategoryFilterPicker v-model="filterCategoryId" :categories="categories" />
+      </div>
+      <div class="advanced-filter-block">
+        <h4 class="advanced-filter-label">消費品項</h4>
+        <TagFilterPicker v-model="filterTagIds" :tags="tags" />
+      </div>
     </div>
 
     <div v-if="loadError" class="error-banner">{{ loadError }}</div>
@@ -602,6 +626,36 @@ async function saveEdit(id: string) {
   border-radius: 6px;
   font-size: 13px;
   background: var(--color-surface);
+}
+
+.advanced-filter-toggle {
+  cursor: pointer;
+}
+
+.advanced-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.advanced-filter-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.advanced-filter-label {
+  font-size: 12px;
+  color: #6b7a74;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+  font-weight: 600;
 }
 
 .summary-bar {
