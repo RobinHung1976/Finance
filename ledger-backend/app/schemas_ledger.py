@@ -119,6 +119,7 @@ class CategoryBreakdownItem(BaseModel):
     amount: float
     percentage: float
     has_children: bool
+    is_self: bool = False  # True = 本節點自身直接掛的交易,未再細分到任何子分類
 
 
 class CategoryBreakdownOut(BaseModel):

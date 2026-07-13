@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.deps import get_current_user
-from app.models import EntryType, Transaction, User
+from app.models import EntryType, Transaction, User, Category
 from app.schemas_ledger import (
     MonthlySummary,
     MonthlyTrendOut,
@@ -123,6 +123,20 @@ _CATEGORY_BREAKDOWN_ROLLUP_SQL = text("""
 """)
 
 
+# 下鑽情境專用:算出「直接掛在被下鑽分類本身、未再歸類到任何子分類」的交易加總。
+# 頂層彙總(parent_id=None)的 cat_tree 起點已包含分類自己,不會有這個問題,
+# 只有下鑽(parent_id=某分類 id)時,分類自己不在 cat_tree 裡,才需要這條額外查詢補回來。
+_CATEGORY_SELF_DIRECT_SQL = text("""
+    SELECT COALESCE(SUM(t.amount), 0) AS amount
+    FROM transactions t
+    WHERE t.household_id = :household_id
+      AND t.category_id = :parent_id
+      AND t.type = :entry_type
+      AND t.date >= :start_date
+      AND t.date <= :end_date
+""")
+
+
 @router.get("/category-breakdown", response_model=CategoryBreakdownOut)
 def category_breakdown(
     type: EntryType = Query(EntryType.expense),
@@ -145,23 +159,59 @@ def category_breakdown(
         },
     ).mappings().all()
 
-    total = sum(float(r["amount"]) for r in rows)
+    raw_items = [
+        {
+            "category_id": str(r["category_id"]),
+            "category_name": r["category_name"],
+            "amount": float(r["amount"]),
+            "has_children": bool(r["has_children"]),
+            "is_self": False,
+        }
+        for r in rows
+    ]
+
+    # 下鑽情境才需要補「本分類直接交易」這一行,頂層(parent_id=None)沒有這個問題
+    if parent_id is not None:
+        direct_amount = float(
+            db.execute(
+                _CATEGORY_SELF_DIRECT_SQL,
+                {
+                    "household_id": current_user.household_id,
+                    "parent_id": parent_id,
+                    "entry_type": type.value,
+                    "start_date": start,
+                    "end_date": end,
+                },
+            ).scalar() or 0
+        )
+        if direct_amount > 0:
+            parent_name = (
+                db.query(Category.name).filter(Category.id == parent_id).scalar()
+                or "未知分類"
+            )
+            raw_items.append(
+                {
+                    "category_id": parent_id,
+                    "category_name": f"{parent_name}(直接歸類,未再細分)",
+                    "amount": direct_amount,
+                    "has_children": False,
+                    "is_self": True,
+                }
+            )
+
+    total = sum(i["amount"] for i in raw_items)
     items = [
         CategoryBreakdownItem(
-            category_id=str(r["category_id"]),
-            category_name=r["category_name"],
-            amount=float(r["amount"]),
-            percentage=round(float(r["amount"]) / total * 100, 2) if total > 0 else 0.0,
-            has_children=bool(r["has_children"]),
+            **i,
+            percentage=round(i["amount"] / total * 100, 2) if total > 0 else 0.0,
         )
-        for r in rows
+        for i in sorted(raw_items, key=lambda x: x["amount"], reverse=True)
     ]
     return CategoryBreakdownOut(type=type, total=total, items=items)
 
 
 from app.models import Tag, TransactionTag
 from app.schemas_ledger import TagBreakdownItem, TagBreakdownOut
-from fastapi import Query
 
 
 @router.get("/tag-breakdown", response_model=TagBreakdownOut)

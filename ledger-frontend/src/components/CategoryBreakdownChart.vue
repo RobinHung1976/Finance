@@ -18,6 +18,8 @@ const PALETTE = [
   '#4F46E5', '#059669', '#D97706', '#DC2626', '#7C3AED',
   '#0891B2', '#DB2777', '#65A30D', '#EA580C', '#4338CA',
 ]
+// 「本分類直接交易(未再細分)」固定用中性灰,跟一般子分類的彩色區隔開來
+const SELF_COLOR = '#9CA3AF'
 
 function formatCurrency(v: number): string {
   return v.toLocaleString('zh-TW', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 })
@@ -64,7 +66,7 @@ function renderChart() {
       datasets: [
         {
           data: items.map((i) => i.amount),
-          backgroundColor: items.map((_, idx) => PALETTE[idx % PALETTE.length]),
+          backgroundColor: items.map((i, idx) => (i.is_self ? SELF_COLOR : PALETTE[idx % PALETTE.length])),
           borderWidth: 1,
         },
       ],
