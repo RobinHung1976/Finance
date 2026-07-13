@@ -90,6 +90,7 @@ export interface CategoryBreakdownItem {
   amount: number
   percentage: number
   has_children: boolean
+  is_self: boolean
 }
 
 export interface CategoryBreakdownOut {
