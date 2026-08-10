@@ -104,6 +104,7 @@
 | `20260713-category-breakdown-self-amount.md` |
 | `20260810-admin-reset-password-cli.md` |
 | `20260810-a10-clarify-tag-breakdown-fix.md` |
+| `20260810-pwa-docs-and-tree-fix.md` |
 
 ### Archive(已整併原始檔,保留回溯)
 

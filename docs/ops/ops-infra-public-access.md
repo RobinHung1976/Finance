@@ -97,6 +97,7 @@ sudo ufw allow 17756/tcp comment 'ledger public via fortigate'
 
 - **無域名 = 無 HTTPS**:Let's Encrypt 需要域名做驗證,純 public IP 無法申請受信任憑證
 - **目前是明文 HTTP 對外**:JWT token 在網路上可被側錄,僅適合短期測試,不建議放正式資料/密碼
+- **前端 PWA 設定目前形同虛設**:`ledger-frontend/vite.config.ts` 有裝 `vite-plugin-pwa`(`registerType: 'autoUpdate'`,manifest 設定「家庭理財」App 名稱、icons、`standalone` 顯示模式),但 Service Worker 是瀏覽器規範層級要求 HTTPS 才能註冊(`localhost` 例外)。部署到目前的 `http://<public_ip>:17756` 環境,瀏覽器大概率不會註冊這個 Service Worker,離線快取/可安裝成 App 等功能實際上不會生效——跟本節同一個根因(無 HTTPS)。`deploy.sh` 的 `npm run build` 仍會照常產出 `sw.js`/`workbox-*.js`(約 442KB precache),在生產環境是死的,不影響現有功能運作,純粹是無效的 build 產出。截至 2026-08-10,決定維持現狀不處理(不移除 PWA plugin,也暫不特別解決),待 HTTPS 問題解決後可一併回頭檢視此項是否要啟用
 - 緩解方案(擇一,尚未執行):FortiGate policy 的 `srcaddr` 收斂成白名單;或申請免費動態域名(如 DuckDNS)接 Let's Encrypt
 
 ## 五、後續建議

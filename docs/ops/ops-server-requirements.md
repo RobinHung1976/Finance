@@ -10,23 +10,32 @@ ledger-backend/                    # FastAPI
 │   ├── models.py                  # ORM: household/user/account/category/transaction/budget/tag/reset_token
 │   ├── deps.py                    # get_current_user / require_admin
 │   ├── security.py                # bcrypt hash、JWT 簽發/驗證、reset token
+│   ├── audit.py                   # log_action():寫入 AuditLog
 │   ├── email.py                   # Postfix relay 寄信
+│   ├── validators.py              # 共用輸入驗證邏輯
 │   ├── schemas.py                 # auth 相關 pydantic schema
-│   ├── schemas_ledger.py          # account/category/transaction schema
+│   ├── schemas_ledger.py          # account/category/transaction/stats schema
+│   ├── schemas_tag.py             # 消費品項(Tag)schema
+│   ├── schemas_import_export.py   # Excel 匯入/匯出 schema
 │   ├── main.py                    # FastAPI app + CORS + router 掛載
-│   └── routers/
-│       ├── auth.py                # register/login/forgot-password/reset-password
-│       ├── households.py          # 家庭資訊、成員管理、改名/封存/解封
-│       ├── accounts.py            # 帳戶 CRUD + 餘額調整連動
-│       ├── categories.py          # 分類 CRUD(鄰接表)
-│       ├── transactions.py        # 交易 CRUD + 帳戶餘額自動連動 + 進階篩選
-│       ├── transactions_transfer.py  # Excel 匯入/匯出
-│       ├── tags.py                # 消費品項 CRUD
-│       └── stats.py               # 統計 API
+│   ├── routers/
+│   │   ├── auth.py                # register/login/forgot-password/reset-password
+│   │   ├── households.py          # 家庭資訊、成員管理、改名/封存/解封
+│   │   ├── accounts.py            # 帳戶 CRUD + 餘額調整連動
+│   │   ├── categories.py          # 分類 CRUD(鄰接表)
+│   │   ├── transactions.py        # 交易 CRUD + 帳戶餘額自動連動 + 進階篩選
+│   │   ├── transactions_transfer.py  # Excel 匯入/匯出
+│   │   ├── tags.py                # 消費品項 CRUD
+│   │   └── stats.py               # 統計 API
+│   └── services/
+│       └── excel_transfer.py      # Excel 匯入/匯出實作邏輯
 ├── alembic/                       # migration
+├── reset_password.py              # 管理員手動重設密碼 CLI(見 changelog-details/20260810-admin-reset-password-cli.md)
 └── requirements.txt
 
 ledger-frontend/                   # Vue3 + TS + Vite
+├── vite.config.ts                 # 含 vite-plugin-pwa(registerType: autoUpdate,manifest 設定「家庭理財」App 名稱/icons)
+│                                   # 目前無 HTTPS,Service Worker 實際不會註冊,見 ops-infra-public-access.md 已知限制
 ├── src/
 │   ├── api/                       # client.ts(axios+JWT攔截)、auth.ts、ledgerApi.ts、importExport.ts
 │   ├── stores/auth.ts             # Pinia:token/role/household_id
@@ -35,9 +44,10 @@ ledger-frontend/                   # Vue3 + TS + Vite
 │   ├── utils/                     # ledgerLabels.ts(中文標籤、幣別格式化)、validators.ts
 │   ├── components/                # CategoryPicker/CategoryTreeNode/CategoryList/CategoryFilterPicker/
 │   │                               # AccountList/AccountFilterPicker/TransactionList/TagPicker/TagList/
-│   │                               # TagFilterPicker/MonthlyTrendChart/CategoryBreakdownChart/
+│   │                               # TagFilterPicker/DateRangePicker/MonthlyTrendChart/CategoryBreakdownChart/
 │   │                               # TagBreakdownChart/ExcelImportExport
-│   └── views/                     # Login/Register/Dashboard/Members/ForgotPassword/ResetPassword
+│   └── views/                     # LoginView/RegisterHouseholdView/DashboardView/MembersView/
+│                                   # ForgotPasswordView/ResetPasswordView/AuditLogView
 ```
 
 ## 二、Service 現況
