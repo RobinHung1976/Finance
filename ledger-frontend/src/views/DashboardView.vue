@@ -10,6 +10,7 @@ import TransactionList from '@/components/TransactionList.vue'
 import MonthlyTrendChart from '@/components/MonthlyTrendChart.vue'
 import CategoryBreakdownChart from '@/components/CategoryBreakdownChart.vue'
 import TagBreakdownChart from '@/components/TagBreakdownChart.vue'
+import TopTransactionsList from '@/components/TopTransactionsList.vue'
 import DateRangePicker from '@/components/DateRangePicker.vue'
 import ExcelImportExport from '@/components/ExcelImportExport.vue'
 import TagList from '@/components/TagList.vue'
@@ -35,7 +36,7 @@ const startDate = ref(`${today.getFullYear()}-01-01`)
 const endDate = ref(today.toISOString().slice(0, 10))
 
 // 統計子分頁(圖表 tab 切換,取代原本 grid 併排)
-type StatsSubTab = 'trend' | 'breakdown' | 'tagBreakdown'
+type StatsSubTab = 'trend' | 'breakdown' | 'tagBreakdown' | 'topTransactions'
 const statsSubTab = ref<StatsSubTab>('trend')
 
 const refreshKey = ref(0)
@@ -88,13 +89,15 @@ function handleLogout() {
             <button :class="{ active: statsSubTab === 'trend' }" @click="statsSubTab = 'trend'">月收支趨勢</button>
             <button :class="{ active: statsSubTab === 'breakdown' }" @click="statsSubTab = 'breakdown'">支出分類統計</button>
             <button :class="{ active: statsSubTab === 'tagBreakdown' }" @click="statsSubTab = 'tagBreakdown'">消費品項排行</button>
+            <button :class="{ active: statsSubTab === 'topTransactions' }" @click="statsSubTab = 'topTransactions'">最大單筆排行</button>
           </nav>
           <DateRangePicker v-model:start-date="startDate" v-model:end-date="endDate" />
         </div>
         <div class="stats-panel">
           <MonthlyTrendChart v-if="statsSubTab === 'trend'" :start-date="startDate" :end-date="endDate" />
           <CategoryBreakdownChart v-else-if="statsSubTab === 'breakdown'" type="expense" :start-date="startDate" :end-date="endDate" />
-          <TagBreakdownChart v-else :start-date="startDate" :end-date="endDate" />
+          <TagBreakdownChart v-else-if="statsSubTab === 'tagBreakdown'" :start-date="startDate" :end-date="endDate" />
+          <TopTransactionsList v-else :start-date="startDate" :end-date="endDate" />
         </div>
       </div>
       <TransactionList v-else-if="activeTab === 'transactions'" :refresh-key="refreshKey" />

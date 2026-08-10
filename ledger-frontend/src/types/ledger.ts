@@ -113,3 +113,19 @@ export interface TagBreakdownOut {
   start_date: string
   end_date: string
 }
+
+export interface TopTransactionItem {
+  id: string
+  amount: number
+  date: string
+  note: string | null
+  account_name: string
+  category_name: string
+}
+
+export interface TopTransactionsOut {
+  type: 'income' | 'expense'
+  start_date: string
+  end_date: string
+  items: TopTransactionItem[]
+}

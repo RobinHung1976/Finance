@@ -1,5 +1,5 @@
 import { apiClient } from './client'
-import type { AccountOut, AccountCreatePayload, CategoryOut, CategoryCreatePayload, TagOut, TagCreatePayload, TransactionOut, TransactionCreatePayload, TransactionFilters, MonthlyTrendOut, CategoryBreakdownOut, EntryType, TagBreakdownOut } from '@/types/ledger'
+import type { AccountOut, AccountCreatePayload, CategoryOut, CategoryCreatePayload, TagOut, TagCreatePayload, TransactionOut, TransactionCreatePayload, TransactionFilters, MonthlyTrendOut, CategoryBreakdownOut, EntryType, TagBreakdownOut, TopTransactionsOut } from '@/types/ledger'
 export function fetchAccounts() {
   return apiClient.get<AccountOut[]>('/accounts').then((r) => r.data)
 }
@@ -98,6 +98,18 @@ export async function fetchTagBreakdown(
   limit = 15,
 ): Promise<TagBreakdownOut> {
   const { data } = await apiClient.get<TagBreakdownOut>('/stats/tag-breakdown', {
+    params: { start_date: startDate, end_date: endDate, type, limit },
+  })
+  return data
+}
+
+export async function fetchTopTransactions(
+  startDate: string,
+  endDate: string,
+  type: 'income' | 'expense' = 'expense',
+  limit = 5,
+): Promise<TopTransactionsOut> {
+  const { data } = await apiClient.get<TopTransactionsOut>('/stats/top-transactions', {
     params: { start_date: startDate, end_date: endDate, type, limit },
   })
   return data
