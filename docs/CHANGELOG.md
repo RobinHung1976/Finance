@@ -4,6 +4,7 @@
 
 ## 2026-08
 
+- 08-10 feat: A9 最大單筆排行上線,統計頁新增第四個子分頁(後端 join 帳戶/分類名稱 + 前端 TopTransactionsList.vue) → [詳情](changelog-details/20260810-a9-top-transactions.md)
 - 08-10 docs: 記錄前端 PWA plugin 現況(無 HTTPS 下形同虛設)+ 修正 server 目錄樹過時項目 → [詳情](changelog-details/20260810-pwa-docs-and-tree-fix.md)
 - 08-10 docs/fix: 釐清 A10 自訂區間統計已完成(文件先前誤列尚未開始);`tag-breakdown` 的 `start_date`/`end_date` 改為選填+預設,與其他統計 API 一致 → [詳情](changelog-details/20260810-a10-clarify-tag-breakdown-fix.md)
 - 08-10 feat: 新增管理員手動重設密碼 CLI(Postfix 忘記密碼信件入口暫停期間的臨時替代方案) → [詳情](changelog-details/20260810-admin-reset-password-cli.md)

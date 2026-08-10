@@ -105,6 +105,7 @@
 | `20260810-admin-reset-password-cli.md` |
 | `20260810-a10-clarify-tag-breakdown-fix.md` |
 | `20260810-pwa-docs-and-tree-fix.md` |
+| `20260810-a9-top-transactions.md` |
 
 ### Archive(已整併原始檔,保留回溯)
 
@@ -127,8 +128,8 @@
 - [ ] A6 成員別統計
 - [ ] A7 帳戶別統計
 - [ ] A8 月底預估(依賴 A1)
-- [ ] A9 最大單筆排行 Top5
-- [ ] A10 自訂區間統計
+- [x] A9 最大單筆排行 Top5(2026-08-10 完成,見 `features/feature-stats.md`)
+- [x] A10 自訂區間統計(原已完成,文件先前誤列,2026-08-10 釐清,見 `features/feature-stats.md`)
 
 **預算功能(B,`Budget` model 已存在,尚缺 API/前端)**
 - [ ] B1 Budget schema + router(CRUD)
