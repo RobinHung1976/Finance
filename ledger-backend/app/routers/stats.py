@@ -216,15 +216,14 @@ from app.schemas_ledger import TagBreakdownItem, TagBreakdownOut
 
 @router.get("/tag-breakdown", response_model=TagBreakdownOut)
 def get_tag_breakdown(
-    start_date: date,
-    end_date: date,
+    start_date: date | None = Query(default=None, description="預設今年 1/1"),
+    end_date: date | None = Query(default=None, description="預設今天"),
     type: EntryType = EntryType.expense,
     limit: int = Query(15, ge=1, le=50),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if end_date < start_date:
-        raise HTTPException(status_code=400, detail="end_date 不可早於 start_date")
+    start_date, end_date = _resolve_range(start_date, end_date)
 
     rows = (
         db.query(
