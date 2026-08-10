@@ -140,3 +140,20 @@ class TagBreakdownOut(BaseModel):
     type: EntryType
     start_date: date
     end_date: date
+
+
+# ---------- Stats: Top Transactions (A9) ----------
+class TopTransactionItem(BaseModel):
+    id: str
+    amount: float
+    date: date
+    note: str | None
+    account_name: str
+    category_name: str
+
+
+class TopTransactionsOut(BaseModel):
+    type: EntryType
+    start_date: date
+    end_date: date
+    items: list[TopTransactionItem]

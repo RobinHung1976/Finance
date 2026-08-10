@@ -210,8 +210,13 @@ def category_breakdown(
     return CategoryBreakdownOut(type=type, total=total, items=items)
 
 
-from app.models import Tag, TransactionTag
-from app.schemas_ledger import TagBreakdownItem, TagBreakdownOut
+from app.models import Tag, TransactionTag, Account
+from app.schemas_ledger import (
+    TagBreakdownItem,
+    TagBreakdownOut,
+    TopTransactionItem,
+    TopTransactionsOut,
+)
 
 
 @router.get("/tag-breakdown", response_model=TagBreakdownOut)
@@ -259,4 +264,53 @@ def get_tag_breakdown(
         type=type,
         start_date=start_date,
         end_date=end_date,
+    )
+
+
+@router.get("/top-transactions", response_model=TopTransactionsOut)
+def top_transactions(
+    type: EntryType = Query(EntryType.expense),
+    start_date: date | None = Query(default=None, description="預設今年 1/1"),
+    end_date: date | None = Query(default=None, description="預設今天"),
+    limit: int = Query(5, ge=1, le=20),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """A9:最大單筆排行,直接 join 帳戶/分類名稱回傳,不接進階篩選(帳戶/分類/消費品項)。"""
+    start, end = _resolve_range(start_date, end_date)
+
+    rows = (
+        db.query(
+            Transaction,
+            Account.name.label("account_name"),
+            Category.name.label("category_name"),
+        )
+        .join(Account, Account.id == Transaction.account_id)
+        .join(Category, Category.id == Transaction.category_id)
+        .filter(
+            Transaction.household_id == current_user.household_id,
+            Transaction.type == type,
+            Transaction.date >= start,
+            Transaction.date <= end,
+        )
+        .order_by(Transaction.amount.desc())
+        .limit(limit)
+        .all()
+    )
+
+    return TopTransactionsOut(
+        type=type,
+        start_date=start,
+        end_date=end,
+        items=[
+            TopTransactionItem(
+                id=t.id,
+                amount=float(t.amount),
+                date=t.date,
+                note=t.note,
+                account_name=account_name,
+                category_name=category_name,
+            )
+            for t, account_name, category_name in rows
+        ],
     )
