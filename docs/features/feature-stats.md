@@ -4,10 +4,11 @@
 
 | 項目 | 說明 |
 |---|---|
-| A1 月收支趨勢 | `GET /stats/monthly-trend?months=12`;DB 層 `date_trunc('month',...)` + `group by` 彙總,缺資料月份補 0 避免斷點;前端 `MonthlyTrendChart.vue`(Chart.js 折線圖) |
+| A1 月收支趨勢 | `GET /stats/monthly-trend`;`start_date`/`end_date` 選填,預設今年 1/1 ~ 今天(**非** `months=12`,文件先前寫錯);DB 層 `date_trunc('month',...)` + `group by` 彙總,缺資料月份補 0 避免斷點;前端 `MonthlyTrendChart.vue`(Chart.js 折線圖) |
 | A2 結餘計算 | 內含在 A1 同一支 API 回應(`total_balance`),未另開 endpoint |
 | A3 分類統計 | Recursive CTE 撈樹 + 金額彙總(`category_id` 需顯式 `str()` 轉換);前端圓餅/甜甜圈圖,固定高度 `320px`(避免 flex 無界延伸)。下鑽某分類(`parent_id` 不為 `None`)時,若該分類本身有直接掛帳(未再歸類到任何子分類)的交易,額外補一項 `is_self=true` 的「`<分類名稱>(直接歸類,未再細分)`」項目(固定灰色 `#9CA3AF`、`has_children=false`),確保下鑽畫面加總 = 頂層總額,不會出現子分類加總對不起來的落差 |
-| 消費品項排行 | `GET /stats/tag-breakdown`;`Tag → TransactionTag → Transaction` join + `func.sum`/`func.count` 依金額排序,`limit` 預設 15、上限 50;前端 `TagBreakdownChart.vue`,長條圖(非圓餅圖,因消費品項多對多、加總可能超過支出總額),明確標註「總和不等於支出總額」 |
+| 消費品項排行 | `GET /stats/tag-breakdown`;`start_date`/`end_date` 選填,預設今年 1/1 ~ 今天,與 A1/A3 行為一致(`update49.sh` 修正,原本必填、沒帶會 422);`Tag → TransactionTag → Transaction` join + `func.sum`/`func.count` 依金額排序,`limit` 預設 15、上限 50;前端 `TagBreakdownChart.vue`,長條圖(非圓餅圖,因消費品項多對多、加總可能超過支出總額),明確標註「總和不等於支出總額」 |
+| A10 自訂區間統計 | 三個統計子分頁(月收支趨勢/支出分類統計/消費品項排行)共用同一組 `DateRangePicker.vue`,兩個 `<input type="date">` 自由選任意起訖日(無固定選項限制),外加「今年」快捷按鈕回到預設值;後端三支統計 API 皆支援任意 `start_date`/`end_date`。**原本誤列在「尚未開始」,實際上已經做完,純粹是文件沒同步** |
 
 三個統計子分頁(月收支趨勢/支出分類統計/消費品項排行)在「統計」tab 下以子分頁切換,共用同一組 `DateRangePicker`。
 
@@ -29,7 +30,6 @@
 | A7 | 帳戶別統計 | 無 |
 | A8 | 月底預估(前半月花費速度 × 天數比例) | A1 |
 | A9 | 最大單筆排行 Top5 | 無 |
-| A10 | 自訂區間統計(重用既有 filter) | 無 |
 | B | 預算功能(`Budget` model 已存在,尚缺 API/前端頁面/達成率進度條) | B3 依賴 A1 |
 | C | CSV 匯入/匯出(獨立模組,不與統計耦合) | 無 |
 | D | 報表匯出(截圖或 PDF) | 依賴統計圖表穩定 |
@@ -46,3 +46,4 @@
 | 2026-07-07 | A3 分類統計相關 bug 修復(UUID 型別、flex 無界延伸) | `changelog-details/20260707-bug-fix-batch.md` |
 | 2026-07-08 | 消費品項排行統計上線(含部署中斷 bug:`TransactionType`/`date` import) | `changelog-details/20260708-tag-breakdown-stats.md` |
 | 2026-07-13 | A3 分類統計下鑽補「本分類直接交易」項目,修正頂層/下鑽 CTE 起點不一致導致金額對不起來的問題 | `changelog-details/20260713-category-breakdown-self-amount.md` |
+| 2026-08-10 | 釐清 A10 自訂區間統計實際已完成(文件先前誤列尚未開始);修正 tag-breakdown 的 start_date/end_date 為選填+預設,與 A1/A3 一致;修正 A1 文件描述的錯誤參數(`months=12` 不存在) | `changelog-details/20260810-a10-clarify-tag-breakdown-fix.md` |
