@@ -63,5 +63,5 @@ ESXi 主機(192.168.100.229)上,`FinanceServer`、`OVOC-8-2-1342`、`rbsbcha01`�
 - ✅ Finance 服務重建完成,資料庫為空
 - ✅ 第一層每日資料庫備份上線
 - ✅ 第二層 Proxmox 整台 VM 備份上線:每日 02:30 → `sata1t`(保留 7 天)、04:00 → 192.168.100.107 `win10-backup-pve02`(保留 4 天),首次備份已完成
-- ⏳ 還原演練尚未執行
-- ⏳ `/root/apps/docs` 文件集需從副本放回 server
+- ✅ 還原演練完成(2026-11-04,見 `changelog-details/20261104-restore-drill-fix.md`)
+- ✅ `docs/` 已由 `update52.sh` 提交並部署到 server

@@ -113,6 +113,8 @@ Datacenter → Backup:
 
 ## 五、定期檢查
 
+最近一次還原演練:**2026-11-04,成功**(見 `changelog-details/20261104-restore-drill-fix.md`)。
+
 | 頻率 | 項目 |
 |---|---|
 | 每週 | `ledger-backup status`:`LAST` 有在跑、紀錄沒有 ❌;Windows 上確認 `\\192.168.100.107\dbbackup\finance` 有最近 3 天的檔案;Proxmox Datacenter → Backup 的任務紀錄(Tasks)沒有失敗 |

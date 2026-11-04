@@ -110,6 +110,7 @@
 | `20260810-pwa-docs-and-tree-fix.md` |
 | `20260810-a9-top-transactions.md` |
 | `20261103-server-rebuild-ssd-failure.md` |
+| `20261104-restore-drill-fix.md` |
 
 ### Archive(已整併原始檔,保留回溯)
 
@@ -119,8 +120,8 @@
 
 1. **Deploy key 為 write access**:2026-11-04 決定維持(server 上 commit/push 流程),接受 server 被入侵時可改寫 repo 的風險
    - ✅ Proxmox 整台 VM 備份已設定(每日 02:30 → `sata1t`、04:00 → 192.168.100.107)
-   - **還原演練尚未執行**,見 `ops/ops-backup.md`
-   - **`/root/apps/docs` 文件集隨舊 VM 遺失**,需從副本放回 server
+   - ✅ 還原演練已完成(2026-11-04),之後每季一次,見 `ops/ops-backup.md`
+   - ✅ `docs/` 已隨 `update52.sh` 重新進版控並部署到 server
 2. **自動化部署尚未建立**:push 後自動觸發部署,目前暫緩,先手動跑穩定後再考慮
 3. **無 HTTPS**:純 public IP 對外,無域名無法申請憑證,JWT token 可能被側錄,見 `ops/ops-infra-public-access.md`
 4. **忘記密碼信件功能入口暫停**:程式碼已完成,Postfix 入口暫停
