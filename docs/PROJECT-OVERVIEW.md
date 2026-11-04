@@ -42,7 +42,7 @@
 └── ops/                   # ops-*.md,server/部署/GitHub 相關
 ```
 
-與 `ledger-backend/`、`ledger-frontend/` 同層,皆位於 `/root/apps` 底下,但**不屬於 `RobinHung1976/Finance` 這個程式碼 repo**,是獨立管理的文件集合。文件異動走一般 `git add/commit/push`,不需要 `updateN.sh`/`deploy.sh` 那套部署 SOP——那套 SOP(見第二節第 10 點、`ops/ops-deployment.md`)專門處理有實際服務重啟/DB migration 的程式碼異動。
+與 `ledger-backend/`、`ledger-frontend/` 同層,**同屬 `RobinHung1976/Finance` repo 的 `docs/` 目錄**(2026-11-03 重建時確認;先前本節誤記為獨立於 repo)。文件異動在 server 的 `/root/apps` 以 `updateN.sh`(或直接 `git add/commit/push`)提交。**未 commit 的修改會被下次 `deploy.sh` 的 `git reset --hard` 蓋掉**,改完務必先 commit + push 再部署。
 
 ## 四、環境資訊速查
 
@@ -50,11 +50,13 @@
 |---|---|
 | Repo | `RobinHung1976/Finance`(monorepo:`ledger-backend/` + `ledger-frontend/`) |
 | 部署目錄 | `/root/apps` |
-| 文件目錄(獨立於 Finance repo,見第三節) | `/root/apps/docs` |
+| 文件目錄(Finance repo 的 `docs/`,見第三節) | `/root/apps/docs` |
 | 後端 | `ledger-backend/`(FastAPI,systemd service `ledger-api`) |
 | 前端 | `ledger-frontend/`(Vue3 + TS + Vite,`npm run build` 產出靜態檔由 Nginx serve) |
 | 前端靜態檔輸出 | `/var/www/ledger-frontend` |
 | 對外 port | `17756`(FortiGate VIP 轉內部,無 HTTPS,見 `ops/ops-infra-public-access.md`) |
+| 主機 | Proxmox `pve02` 上的 VM 205 `finance-server`(Ubuntu 24.04,`192.168.100.205`,時區 `Asia/Taipei`) |
+| 備份 | 每日 02:00 `ledger-backup` → VM 本機 + `//192.168.100.107/dbbackup/finance`,見 `ops/ops-backup.md` |
 
 完整架構、部署流程、GitHub 連線設定、`updateN.sh`/`deploy.sh` 慣例,見 `ops/ops-server-requirements.md`、`ops/ops-deployment.md`、`ops/ops-github-workflow.md`。
 
@@ -82,6 +84,7 @@
 | `ops-github-workflow.md` | GitHub 連線設定、日常部署流程 |
 | `ops-infra-public-access.md` | FortiGate + Nginx 對外連線設定 |
 | `ops-migration-sop.md` | Alembic migration 產生流程 |
+| `ops-backup.md` | 資料庫每日備份、Proxmox VM 備份、還原與災難復原流程 |
 
 ### Changelog-details(依日期,永久保留)
 
@@ -106,14 +109,18 @@
 | `20260810-a10-clarify-tag-breakdown-fix.md` |
 | `20260810-pwa-docs-and-tree-fix.md` |
 | `20260810-a9-top-transactions.md` |
+| `20261103-server-rebuild-ssd-failure.md` |
 
 ### Archive(已整併原始檔,保留回溯)
 
 含三版 `update-deploy-sop-*` + 自動歸檔增修文件(已整併進 `ops/ops-deployment.md`)、三份消費品項疊代式功能文件(已整併進 `features/feature-tags.md`)、及其餘所有原始 `bug-fix-*`/`finance-*`/`software-architecture`/`github-feature`/`infra-public-access`/`migration-sop`/`第二期任務清單` 原檔。
 
-## 六、已知待處理事項(截至 2026-07-10)
+## 六、已知待處理事項(截至 2026-11-03)
 
-1. **Deploy key 尚未改回唯讀**:目前仍是 write access,待辦
+1. **Deploy key 為 write access**:2026-11-04 決定維持(server 上 commit/push 流程),接受 server 被入侵時可改寫 repo 的風險
+   - ✅ Proxmox 整台 VM 備份已設定(每日 02:30 → `sata1t`、04:00 → 192.168.100.107)
+   - **還原演練尚未執行**,見 `ops/ops-backup.md`
+   - **`/root/apps/docs` 文件集隨舊 VM 遺失**,需從副本放回 server
 2. **自動化部署尚未建立**:push 後自動觸發部署,目前暫緩,先手動跑穩定後再考慮
 3. **無 HTTPS**:純 public IP 對外,無域名無法申請憑證,JWT token 可能被側錄,見 `ops/ops-infra-public-access.md`
 4. **忘記密碼信件功能入口暫停**:程式碼已完成,Postfix 入口暫停

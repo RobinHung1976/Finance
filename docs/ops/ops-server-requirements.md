@@ -1,5 +1,16 @@
 # Server 環境需求
 
+## 〇、主機與 VM(2026-11-03 重建後)
+
+| 項目 | 設定 |
+|---|---|
+| Hypervisor | Proxmox VE,node `pve02`(系統碟 512GB SSD、備份碟 SATA 1TB) |
+| VM | 205 `finance-server`:q35、2 vCPU(x86-64-v2-AES)、4 GB RAM、50 GB local-lvm(discard/ssd)、virtio 網卡 vmbr0、Qemu Agent |
+| OS | Ubuntu Server **24.04** LTS(`requirements.txt` 需 Python 3.12,勿用 26.04),使用者 `fiadmin` |
+| IP / 時區 | `192.168.100.205` 固定 IP / `Asia/Taipei` |
+| Node | NodeSource 22.x(Vite 8 需 ≥ 20.19) |
+| 重建方式 | 全新 VM 上以 root 執行 `rebuild-server.sh`(本機 `Finance\Developing\`),備份/還原見 `ops/ops-backup.md` |
+
 ## 一、系統架構
 
 ```

@@ -6,6 +6,7 @@
 
 - Repo:`RobinHung1976/Finance`(monorepo,`ledger-backend/` + `ledger-frontend/`)
 - 本機改 → `updateN.sh` 覆寫檔案 + commit → `git push` → server 端 `./deploy.sh`
+- **「本機 repo」= server 上的 `/root/apps`**:`updateN.sh` 在 server 上執行、commit、push,再於同一台 server 跑 `deploy.sh`(deploy key 有 write access)
 - **禁止**在 server 上直接手動改任何程式檔案(`sed`/vim 皆算),下次 `deploy.sh` 的 `git reset --hard` 會蓋掉
 
 ## 二、`updateN.sh` 撰寫與執行 SOP
@@ -52,12 +53,12 @@ fi
 
 ### 交付方式
 
-Claude 直接建立實體 `updateN.sh` 檔案供下載(取代舊流程的終端機貼上存檔),使用者下載後傳到 server、`chmod +x updateN.sh && ./updateN.sh` 執行即可。若腳本內容需依 server 端實際檔案內容即時調整,會先在對話中確認邏輯,再產出最終版本檔案。
+Claude 直接建立實體 `updateN.sh` 檔案供下載(取代舊流程的終端機貼上存檔),使用者用 WinSCP 傳到 server 的 `/home/fiadmin`(fiadmin 無法直接寫入 `/root`),再以 root `mv` 到 `/root/apps`、`sed -i 's/\r$//'` 去除 Windows 換行後 `chmod +x updateN.sh && ./updateN.sh` 執行。若腳本內容需依 server 端實際檔案內容即時調整,會先在對話中確認邏輯,再產出最終版本檔案。
 
 ### 執行步驟(每次異動固定流程)
 
 ```bash
-# 1. 本機 repo 根目錄
+# 1. repo 根目錄(server:cd /root/apps)
 chmod +x updateN.sh && ./updateN.sh
 
 # 2. 確認 diff

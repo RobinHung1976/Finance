@@ -27,7 +27,7 @@ chmod 600 ~/.ssh/config ~/.ssh/finance_deploy_key
 
 Repo → Settings → Deploy keys → Add deploy key,貼上公鑰。本專案在 server 上直接 `git commit` + `git push`,**勾選 Allow write access**。
 
-> **待辦**:initial push 完成後建議把 key 改回唯讀,降低 server 被入侵時的風險範圍。
+> 2026-11-03 重建時曾改為唯讀,因 Windows 本機另建開發環境不便,2026-11-04 決定維持「server 上 commit/push」流程,key(Title `Finance-Server`)重新加回並開啟 write access。風險:server 被入侵時可改寫 repo,接受此風險。新主機的 key 由 `rebuild-server.sh` 產生並提示貼上。
 
 ### 4. 測試連線
 
@@ -82,7 +82,7 @@ ledger-frontend/.env.production
 ## 五、目前狀態
 
 - ✅ Repo 已建立並可正常 push/pull,`deploy.sh` 已改為 git-based
-- ⏳ Deploy key 尚未改回唯讀(待辦)
+- ⚠️ Deploy key 為 write access(2026-11-04 決定維持,見第一節第 3 點)
 - ⏳ 自動化部署(push 後自動觸發)尚未建立,暫緩
 
 ## 六、已知問題排查(初始化過程曾踩過的坑)
