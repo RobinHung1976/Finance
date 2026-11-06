@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { CategoryOut } from '@/types/ledger'
+import AppIcon from './AppIcon.vue'
 defineOptions({ name: 'CategoryTreeNode' }) // 遞迴自我參照元件需要明確命名
 const props = defineProps<{
   category: CategoryOut
@@ -55,12 +56,13 @@ function handleRename(id: string, name: string) {
 </script>
 <template>
   <div>
-    <div class="node-row" :style="{ paddingLeft: depth * 20 + 'px' }">
+    <div class="node-row" :class="{ root: depth === 0 }" :style="{ paddingLeft: 16 + depth * 22 + 'px' }">
       <button
         v-if="hasChildren"
         type="button"
         class="expand-btn"
         :aria-expanded="isExpanded"
+        :aria-label="isExpanded ? '收合' : '展開'"
         @click="isExpanded = !isExpanded"
       >
         {{ isExpanded ? '▾' : '▸' }}
@@ -68,22 +70,22 @@ function handleRename(id: string, name: string) {
       <span v-else class="expand-spacer"></span>
 
       <template v-if="!isEditing">
-        <strong class="node-name">{{ category.name }}</strong>
-        <span v-if="hasChildren" class="child-count">({{ children.length }})</span>
+        <span class="node-name">{{ category.name }}</span>
+        <span v-if="hasChildren" class="pill child-count">{{ children.length }}</span>
         <div class="node-actions">
-          <button class="btn-text" @click="startEdit">改名</button>
-          <button class="btn-text-danger" @click="handleDelete(category.id)">刪除</button>
+          <button type="button" class="btn sm" @click="startEdit"><AppIcon name="edit" />改名</button>
+          <button type="button" class="btn danger sm" @click="handleDelete(category.id)"><AppIcon name="trash" />刪除</button>
         </div>
       </template>
       <template v-else>
-        <input v-model="editName" type="text" maxlength="100" class="edit-input" @keyup.enter="saveEdit" />
+        <input v-model="editName" type="text" maxlength="100" class="edit-input" aria-label="新名稱" @keyup.enter="saveEdit" />
         <div class="node-actions">
-          <button class="btn-text" @click="saveEdit">儲存</button>
-          <button class="btn-text" @click="cancelEdit">取消</button>
+          <button type="button" class="btn primary sm" @click="saveEdit">儲存</button>
+          <button type="button" class="btn sm" @click="cancelEdit">取消</button>
         </div>
       </template>
     </div>
-    <div v-if="isEditing && editError" class="error-banner" :style="{ marginLeft: depth * 20 + 28 + 'px' }">
+    <div v-if="isEditing && editError" class="node-error" :style="{ paddingLeft: 16 + depth * 22 + 28 + 'px' }">
       {{ editError }}
     </div>
     <div v-if="hasChildren && isExpanded">
@@ -104,54 +106,29 @@ function handleRename(id: string, name: string) {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--color-border);
+  min-height: 46px;
+  padding-right: 16px;
+  border-bottom: 1px solid var(--line-soft);
 }
+.node-row:hover { background: rgb(255 255 255 / 45%); }
+.node-row.root .node-name { font-weight: 700; }
 .expand-btn {
-  background: none;
-  border: none;
-  color: #6b7a74;
-  font-size: 12px;
-  width: 20px;
+  width: 22px;
+  height: 22px;
   padding: 0;
-  cursor: pointer;
-}
-.expand-spacer {
-  display: inline-block;
-  width: 20px;
-}
-.node-name {
-  font-size: 14px;
-}
-.child-count {
   font-size: 12px;
-  color: #6b7a74;
+  line-height: 1;
+  color: var(--text-2);
+  border: 1px solid #a9b0b8;
+  border-radius: 4px;
+  background: var(--metal-key);
+  box-shadow: inset 0 1px 0 #fff;
 }
-.node-actions {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-}
-.edit-input {
-  flex: 1;
-  padding: 4px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 14px;
-}
-.btn-text {
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-size: 13px;
-  padding: 4px 8px;
-}
-.btn-text-danger {
-  background: none;
-  border: none;
-  color: var(--color-danger);
-  font-size: 13px;
-  padding: 4px 8px;
-}
+.expand-btn:hover { background: var(--metal-key-hover); }
+.expand-spacer { display: inline-block; width: 22px; }
+.node-name { font-size: 14px; }
+.child-count { font-size: 11px; padding: 0 7px; }
+.node-actions { margin-left: auto; display: flex; gap: 6px; }
+.edit-input { flex: 1; max-width: 320px; }
+.node-error { padding: 4px 0 8px; color: var(--bad); font-size: 12px; }
 </style>

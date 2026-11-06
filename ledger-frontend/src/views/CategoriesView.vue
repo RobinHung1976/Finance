@@ -3,9 +3,6 @@ import CategoryList from '@/components/CategoryList.vue'
 </script>
 
 <template>
-  <section class="panel">
-    <div class="panel-body">
-      <CategoryList />
-    </div>
-  </section>
+  <!-- CategoryList 自帶面板 -->
+  <CategoryList />
 </template>

@@ -3,9 +3,6 @@ import AccountList from '@/components/AccountList.vue'
 </script>
 
 <template>
-  <section class="panel">
-    <div class="panel-body">
-      <AccountList />
-    </div>
-  </section>
+  <!-- AccountList 自帶面板 -->
+  <AccountList />
 </template>

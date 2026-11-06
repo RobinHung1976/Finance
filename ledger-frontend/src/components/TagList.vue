@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { fetchTags, createTag, updateTag, deleteTag } from '@/api/ledgerApi'
+import AppIcon from './AppIcon.vue'
 import type { TagOut } from '@/types/ledger'
 import type { AxiosError } from 'axios'
 import type { ApiError } from '@/types/api'
@@ -157,152 +158,136 @@ async function handleDelete(tag: TagOut) {
 </script>
 
 <template>
-  <div>
-    <h2 style="font-size: 15px; color: #6b7a74; text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 12px">
-      消費品項管理
-    </h2>
-    <form class="inline-card" @submit.prevent="handleCreate" style="display: flex; gap: 8px; align-items: flex-start">
-      <div style="flex: 1">
-        <input
-          v-model="newTagName"
-          type="text"
-          maxlength="50"
-          placeholder="新增消費品項（例如：三媽）"
-          style="width: 100%; padding: 8px 10px; border: 1px solid var(--color-border); border-radius: 6px; box-sizing: border-box"
-        />
-        <div v-if="createError" class="error-banner" style="margin-top: 6px">{{ createError }}</div>
-      </div>
-      <button class="btn-primary" type="submit" style="width: auto; padding: 8px 16px" :disabled="isCreating">
-        {{ isCreating ? '新增中…' : '新增' }}
-      </button>
-    </form>
-
-    <input
-      v-model="searchQuery"
-      type="text"
-      placeholder="搜尋消費品項"
-      style="width: 100%; padding: 8px 10px; margin: 12px 0; border: 1px solid var(--color-border); border-radius: 6px; box-sizing: border-box"
-    />
-
-    <div v-if="loadError" class="error-banner">{{ loadError }}</div>
-    <p v-if="!isLoading && tags.length === 0" style="color: #6b7a74; font-size: 13px">尚未建立任何消費品項。</p>
-    <p v-if="!isLoading && tags.length > 0 && isSearching && filteredTags.length === 0" style="color: #6b7a74; font-size: 13px">
-      找不到符合「{{ searchQuery }}」的消費品項。
-    </p>
-
-    <template v-if="!isSearching">
-      <div v-if="recentTags.length" class="tag-section-label">最近使用</div>
-      <div v-if="recentTags.length" class="tag-grid">
-        <button
-          v-for="t in recentTags"
-          :key="t.id"
-          type="button"
-          class="tag-chip"
-          :class="{ active: activeTagId === t.id, unused: t.usage_count === 0 }"
-          @click="toggleActive(t.id)"
-        >
-          {{ t.name }} <span class="tag-count">{{ t.usage_count }}</span>
+  <section class="panel">
+    <div class="panel-head">
+      <h2><AppIcon name="tag" />消費品項</h2>
+      <span v-if="!isLoading" class="pill">{{ tags.length }} 個</span>
+      <span class="spacer"></span>
+      <form class="row create" @submit.prevent="handleCreate">
+        <input v-model="newTagName" type="text" maxlength="50" placeholder="新增消費品項(例如:三媽)" aria-label="新消費品項名稱" />
+        <button class="btn primary" type="submit" :disabled="isCreating">
+          <AppIcon name="plus" />{{ isCreating ? '新增中…' : '新增' }}
         </button>
-      </div>
+      </form>
+    </div>
 
-      <div v-if="recentTags.length && otherTags.length" class="tag-section-label">全部品項</div>
-      <div v-if="otherTags.length" class="tag-grid">
-        <button
-          v-for="t in otherTags"
-          :key="t.id"
-          type="button"
-          class="tag-chip"
-          :class="{ active: activeTagId === t.id, unused: t.usage_count === 0 }"
-          @click="toggleActive(t.id)"
-        >
-          {{ t.name }} <span class="tag-count">{{ t.usage_count }}</span>
-        </button>
-      </div>
-    </template>
+    <div v-if="createError || loadError" class="panel-body msgs">
+      <div v-if="createError" class="error-banner" role="alert">{{ createError }}</div>
+      <div v-if="loadError" class="error-banner">{{ loadError }}</div>
+    </div>
 
-    <template v-else>
-      <div class="tag-grid">
+    <div class="toolbar">
+      <input v-model="searchQuery" type="search" placeholder="搜尋消費品項" aria-label="搜尋消費品項" />
+      <span class="hint">點選品項可改名或刪除;數字為使用次數</span>
+    </div>
+
+    <div class="panel-body">
+      <p v-if="!isLoading && tags.length === 0" class="empty">尚未建立任何消費品項。</p>
+      <p v-else-if="isSearching && filteredTags.length === 0" class="empty">找不到符合「{{ searchQuery }}」的消費品項。</p>
+
+      <template v-if="!isSearching">
+        <template v-if="recentTags.length">
+          <div class="section-label">最近使用</div>
+          <div class="tag-grid">
+            <button
+              v-for="t in recentTags"
+              :key="t.id"
+              type="button"
+              class="tag-key"
+              :class="{ active: activeTagId === t.id, unused: t.usage_count === 0 }"
+              :aria-pressed="activeTagId === t.id"
+              @click="toggleActive(t.id)"
+            >
+              {{ t.name }}<span class="tag-count">{{ t.usage_count }}</span>
+            </button>
+          </div>
+        </template>
+        <template v-if="otherTags.length">
+          <div v-if="recentTags.length" class="section-label">全部品項</div>
+          <div class="tag-grid">
+            <button
+              v-for="t in otherTags"
+              :key="t.id"
+              type="button"
+              class="tag-key"
+              :class="{ active: activeTagId === t.id, unused: t.usage_count === 0 }"
+              :aria-pressed="activeTagId === t.id"
+              @click="toggleActive(t.id)"
+            >
+              {{ t.name }}<span class="tag-count">{{ t.usage_count }}</span>
+            </button>
+          </div>
+        </template>
+      </template>
+
+      <div v-else class="tag-grid">
         <button
           v-for="t in filteredTags"
           :key="t.id"
           type="button"
-          class="tag-chip"
+          class="tag-key"
           :class="{ active: activeTagId === t.id, unused: t.usage_count === 0 }"
+          :aria-pressed="activeTagId === t.id"
           @click="toggleActive(t.id)"
         >
-          {{ t.name }} <span class="tag-count">{{ t.usage_count }}</span>
+          {{ t.name }}<span class="tag-count">{{ t.usage_count }}</span>
         </button>
       </div>
-    </template>
+    </div>
 
-    <div v-if="activeTag" class="row-card" style="flex-direction: column; align-items: stretch; gap: 8px; margin-top: 12px">
-      <template v-if="editingId !== activeTag.id">
-        <div style="display: flex; justify-content: space-between; align-items: center">
-          <div>
-            <strong>{{ activeTag.name }}</strong>
-            <span style="color: #6b7a74; font-size: 13px; margin-left: 8px">
-              使用 {{ activeTag.usage_count }} 次<template v-if="activeTag.last_used_date">，最後使用於 {{ activeTag.last_used_date }}</template>
-            </span>
-          </div>
-          <div style="display: flex; gap: 12px">
-            <button class="btn-text" @click="startEdit(activeTag)">改名</button>
-            <button class="btn-text-danger" @click="handleDelete(activeTag)">刪除</button>
-            <button class="btn-text" @click="activeTagId = null">關閉</button>
-          </div>
-        </div>
-      </template>
-      <form v-else style="display: flex; gap: 8px; align-items: center" @submit.prevent="saveEdit(activeTag.id)">
-        <input
-          v-model="editName"
-          type="text"
-          maxlength="50"
-          style="flex: 1; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: 6px"
-        />
-        <button class="btn-primary" type="submit" style="width: auto; padding: 6px 14px" :disabled="isSavingEdit">
+    <div v-if="activeTag" class="detail">
+      <form v-if="editingId === activeTag.id" class="row rename" @submit.prevent="saveEdit(activeTag.id)">
+        <input v-model="editName" type="text" maxlength="50" aria-label="新名稱" />
+        <button class="btn primary sm" type="submit" :disabled="isSavingEdit">
           {{ isSavingEdit ? '儲存中…' : '儲存' }}
         </button>
-        <button type="button" class="btn-text" @click="cancelEdit">取消</button>
+        <button type="button" class="btn sm" @click="cancelEdit">取消</button>
+        <span v-if="editError" class="field-error">{{ editError }}</span>
       </form>
-      <div v-if="editingId === activeTag.id && editError" class="error-banner">{{ editError }}</div>
+      <template v-else>
+        <b>{{ activeTag.name }}</b>
+        <span class="hint">
+          使用 {{ activeTag.usage_count }} 次<template v-if="activeTag.last_used_date">,最後使用於 {{ activeTag.last_used_date }}</template>
+        </span>
+        <span class="spacer"></span>
+        <button type="button" class="btn sm" @click="startEdit(activeTag)"><AppIcon name="edit" />改名</button>
+        <button type="button" class="btn danger sm" @click="handleDelete(activeTag)"><AppIcon name="trash" />刪除</button>
+        <button type="button" class="btn ghost sm" @click="activeTagId = null"><AppIcon name="x" />關閉</button>
+      </template>
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped>
-.tag-section-label {
-  font-size: 11px;
-  color: #8a948e;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 12px 0 6px;
+.create { flex-wrap: nowrap; }
+.create input { width: 260px; }
+.msgs { padding-bottom: 0; }
+.section-label { margin: 0 0 8px; font-size: 12px; font-weight: 700; color: var(--muted); }
+.tag-grid + .section-label { margin-top: 18px; }
+.tag-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag-key {
+  display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px;
+  font: inherit; font-size: 13.5px; font-weight: 700; color: #22272e; text-shadow: 0 1px 0 #fff;
+  border: 1px solid #959ca6; border-radius: 999px; background: var(--metal-key); cursor: pointer;
+  box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgb(0 0 0 / 18%);
 }
-.tag-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.tag-chip {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.tag-chip.unused {
-  color: #a3aca7;
-}
-.tag-chip.active {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: #fff;
-  font-weight: 600;
+.tag-key:hover { background: var(--metal-key-hover); }
+.tag-key.unused { color: #7d8590; font-weight: 600; }
+.tag-key.active {
+  color: #fff; text-shadow: 0 -1px 0 rgb(0 0 0 / 35%); border-color: var(--brand-edge); background: var(--brand-metal-lit);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 45%), 0 0 8px var(--brand-glow);
 }
 .tag-count {
-  font-size: 11px;
-  opacity: 0.75;
+  min-width: 20px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 18px; text-align: center;
+  background: rgb(0 0 0 / 8%); font-variant-numeric: tabular-nums;
 }
+.tag-key.active .tag-count { background: rgb(255 255 255 / 25%); }
+.detail {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 20px;
+  border-top: 1px solid var(--line-soft); background: rgb(255 255 255 / 45%); border-radius: 0 0 var(--radius) var(--radius);
+}
+.detail .spacer { flex: 1; }
+.rename { flex: 1; flex-wrap: nowrap; }
+.rename input { flex: 1; max-width: 320px; }
+.field-error { color: var(--bad); font-size: 12px; white-space: nowrap; }
 </style>

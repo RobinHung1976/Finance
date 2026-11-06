@@ -3,9 +3,6 @@ import ExcelImportExport from '@/components/ExcelImportExport.vue'
 </script>
 
 <template>
-  <section class="panel">
-    <div class="panel-body">
-      <ExcelImportExport />
-    </div>
-  </section>
+  <!-- ExcelImportExport 自帶面板 -->
+  <ExcelImportExport />
 </template>

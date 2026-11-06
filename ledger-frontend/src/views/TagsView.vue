@@ -3,9 +3,6 @@ import TagList from '@/components/TagList.vue'
 </script>
 
 <template>
-  <section class="panel">
-    <div class="panel-body">
-      <TagList />
-    </div>
-  </section>
+  <!-- TagList 自帶面板 -->
+  <TagList />
 </template>

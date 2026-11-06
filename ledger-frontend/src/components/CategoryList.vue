@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import CategoryPicker from './CategoryPicker.vue'
 import CategoryTreeNode from './CategoryTreeNode.vue'
+import AppIcon from './AppIcon.vue'
 import { fetchCategories, updateCategory, deleteCategory } from '@/api/ledgerApi'
 import type { CategoryOut, EntryType } from '@/types/ledger'
 import type { AxiosError } from 'axios'
@@ -58,6 +59,8 @@ function ancestorChain(category: CategoryOut): CategoryOut[] {
 function fullPathLabel(category: CategoryOut): string {
   return ancestorChain(category).map((c) => c.name).join(' › ')
 }
+
+const typeCount = computed(() => categories.value.filter((c) => c.type === activeType.value).length)
 
 const searchResults = computed(() => {
   const q = treeSearchQuery.value.trim().toLowerCase()
@@ -126,132 +129,112 @@ async function saveSearchEdit(id: string) {
 </script>
 
 <template>
-  <div>
-    <h2 class="section-title">分類</h2>
+  <section class="panel">
+    <div class="panel-head">
+      <h2><AppIcon name="folder" />建立分類</h2>
+      <span class="spacer"></span>
+      <div class="keypad" role="radiogroup" aria-label="收支類型">
+        <button
+          type="button"
+          role="radio"
+          class="key"
+          :class="{ active: activeType === 'expense' }"
+          :aria-checked="activeType === 'expense'"
+          @click="activeType = 'expense'"
+        >
+          <AppIcon name="expense" class="ic-expense" />支出
+        </button>
+        <button
+          type="button"
+          role="radio"
+          class="key"
+          :class="{ active: activeType === 'income' }"
+          :aria-checked="activeType === 'income'"
+          @click="activeType = 'income'"
+        >
+          <AppIcon name="income" class="ic-income" />收入
+        </button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div v-if="loadError" class="error-banner">{{ loadError }}</div>
+      <p class="hint intro">逐層點選進入下一層,在要放的層級按「+ 新增分類」。</p>
+      <CategoryPicker
+        v-model="browsingSelection"
+        :type="activeType"
+        :categories="categories"
+        :hide-selected-hint="true"
+        @created="handleCategoryCreated"
+      />
+    </div>
+  </section>
 
-    <div v-if="loadError" class="error-banner">{{ loadError }}</div>
-
-    <div class="type-toggle">
-      <button :class="{ active: activeType === 'expense' }" @click="activeType = 'expense'">支出</button>
-      <button :class="{ active: activeType === 'income' }" @click="activeType = 'income'">收入</button>
+  <section class="panel">
+    <div class="panel-head">
+      <h2><AppIcon name="table" />全部分類</h2>
+      <span class="pill">{{ activeType === 'expense' ? '支出' : '收入' }}・{{ typeCount }} 個</span>
+    </div>
+    <div class="toolbar">
+      <input v-model="treeSearchQuery" type="search" placeholder="搜尋分類(不限層級,例如:晚餐)" aria-label="搜尋分類" />
     </div>
 
-    <CategoryPicker
-      v-model="browsingSelection"
-      :type="activeType"
-      :categories="categories"
-      :hide-selected-hint="true"
-      @created="handleCategoryCreated"
-    />
-
-    <p v-if="!isLoading && categories.length === 0" style="color: #6b7a74; font-size: 13px; margin-top: 16px">
-      尚未建立任何分類。
-    </p>
-
-    <h3 class="section-title" style="margin-top: 20px">全部分類</h3>
-    <input
-      v-model="treeSearchQuery"
-      type="text"
-      placeholder="搜尋分類(不限層級,例如：晚餐)"
-      style="width: 100%; padding: 8px 10px; margin-bottom: 12px; border: 1px solid var(--color-border); border-radius: 6px; box-sizing: border-box"
-    />
-
     <template v-if="isTreeSearching">
-      <p v-if="searchResults.length === 0" style="color: #6b7a74; font-size: 13px">
-        找不到符合「{{ treeSearchQuery }}」的分類。
-      </p>
-      <div v-for="r in searchResults" :key="r.category.id" class="row-card">
-        <template v-if="editingId !== r.category.id">
-          <span>{{ r.label }}</span>
-          <div style="display: flex; gap: 12px">
-            <button class="btn-text" @click="startEdit(r.category)">改名</button>
-            <button class="btn-text-danger" @click="handleDelete(r.category.id)">刪除</button>
-          </div>
-        </template>
-        <form
-          v-else
-          style="display: flex; gap: 8px; align-items: center; width: 100%"
-          @submit.prevent="saveSearchEdit(r.category.id)"
-        >
-          <input
-            v-model="editName"
-            type="text"
-            maxlength="100"
-            style="flex: 1; padding: 6px 10px; border: 1px solid var(--color-border); border-radius: 6px"
-          />
-          <button class="btn-primary" type="submit" style="width: auto; padding: 6px 14px">儲存</button>
-          <button type="button" class="btn-text" @click="cancelEdit">取消</button>
-        </form>
-        <div v-if="editingId === r.category.id && editError" class="error-banner" style="width: 100%; margin-top: 4px">
-          {{ editError }}
-        </div>
+      <div v-if="searchResults.length" class="table-wrap">
+        <table class="grid">
+          <thead>
+            <tr>
+              <th>分類路徑</th>
+              <th class="num">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="r in searchResults" :key="r.category.id">
+              <td>
+                <form v-if="editingId === r.category.id" class="row rename" @submit.prevent="saveSearchEdit(r.category.id)">
+                  <input v-model="editName" type="text" maxlength="100" aria-label="新名稱" />
+                  <button class="btn primary sm" type="submit">儲存</button>
+                  <button type="button" class="btn sm" @click="cancelEdit">取消</button>
+                  <span v-if="editError" class="field-error">{{ editError }}</span>
+                </form>
+                <span v-else>{{ r.label }}</span>
+              </td>
+              <td class="actions">
+                <template v-if="editingId !== r.category.id">
+                  <button type="button" class="btn sm" @click="startEdit(r.category)"><AppIcon name="edit" />改名</button>
+                  <button type="button" class="btn danger sm" @click="handleDelete(r.category.id)"><AppIcon name="trash" />刪除</button>
+                </template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
+      <p v-else class="empty">找不到符合「{{ treeSearchQuery }}」的分類。</p>
     </template>
 
     <template v-else>
-      <div v-if="rootCategories.length === 0" style="color: #6b7a74; font-size: 13px">
-        此類型尚未建立任何分類。
+      <div v-if="rootCategories.length" class="tree">
+        <CategoryTreeNode
+          v-for="root in rootCategories"
+          :key="root.id"
+          :category="root"
+          :categories="categories"
+          :depth="0"
+          @delete="handleDelete"
+          @rename="handleRename"
+        />
       </div>
-      <CategoryTreeNode
-        v-for="root in rootCategories"
-        :key="root.id"
-        :category="root"
-        :categories="categories"
-        :depth="0"
-        @delete="handleDelete"
-        @rename="handleRename"
-      />
+      <p v-else-if="!isLoading" class="empty">此類型尚未建立任何分類。</p>
     </template>
-  </div>
+  </section>
 </template>
 
 <style scoped>
-.section-title {
-  font-size: 15px;
-  color: #6b7a74;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0 0 12px;
-  font-weight: 600;
-}
-
-.type-toggle {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 12px;
-}
-
-.type-toggle button {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 6px 16px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.type-toggle button.active {
-  background: var(--color-primary);
-  color: #fff;
-  border-color: var(--color-primary);
-}
-
-.row-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  margin-bottom: 8px;
-}
-
-.btn-text-danger {
-  background: none;
-  border: none;
-  color: var(--color-danger);
-  font-size: 13px;
-  padding: 4px 8px;
-}
+.panel-head .keypad { padding: 0; }
+.ic-expense { color: #b8391a; }
+.ic-income { color: #1f8a4c; }
+.intro { margin: 0 0 10px; }
+.rename { flex-wrap: nowrap; }
+.rename input { flex: 1; min-width: 160px; }
+.field-error { color: var(--bad); font-size: 12px; white-space: nowrap; }
+.tree { padding: 4px 0 8px; }
 </style>

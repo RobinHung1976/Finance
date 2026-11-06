@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import AppIcon from './AppIcon.vue'
 import { fetchAccounts, createAccount, updateAccount, deleteAccount } from '@/api/ledgerApi'
 import { ACCOUNT_TYPE_LABEL, formatCurrency } from '@/utils/ledgerLabels'
 import type { AccountOut, AccountType } from '@/types/ledger'
@@ -19,6 +20,13 @@ const balance = ref(0)
 const isDefaultExpense = ref(false)
 const formError = ref('')
 const isSubmitting = ref(false)
+
+const totalBalance = computed(() => accounts.value.reduce((sum, a) => sum + a.balance, 0))
+
+function toggleForm() {
+  showForm.value = !showForm.value
+  formError.value = ''
+}
 
 // 編輯既有帳戶餘額
 const editingId = ref<string | null>(null)
@@ -41,6 +49,10 @@ onMounted(load)
 
 async function handleCreate() {
   formError.value = ''
+  if (!Number.isFinite(balance.value)) {
+    formError.value = '請輸入起始餘額(可為 0 或負數)'
+    return
+  }
   if (!name.value.trim()) {
     formError.value = '請輸入帳戶名稱'
     return
@@ -92,6 +104,10 @@ function cancelEdit() {
 
 async function saveEdit(id: string) {
   editError.value = ''
+  if (!Number.isFinite(editBalance.value)) {
+    editError.value = '請輸入餘額'
+    return
+  }
   isSavingEdit.value = true
   try {
     await updateAccount(id, { balance: editBalance.value })
@@ -119,159 +135,114 @@ async function setDefaultExpense(id: string) {
 </script>
 
 <template>
-  <div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
-      <h2 style="font-size: 15px; color: #6b7a74; text-transform: uppercase; letter-spacing: 0.04em; margin: 0">
-        帳戶
-      </h2>
-      <button
-        class="btn-primary"
-        style="width: auto; padding: 6px 14px; font-size: 13px"
-        @click="showForm = !showForm"
-      >
-        {{ showForm ? '取消' : '+ 新增帳戶' }}
+  <section class="panel">
+    <div class="panel-head">
+      <h2><AppIcon name="wallet" />帳戶</h2>
+      <span v-if="!isLoading" class="pill">{{ accounts.length }} 個</span>
+      <span class="spacer"></span>
+      <button type="button" class="btn primary" :class="{ on: showForm }" @click="toggleForm">
+        <AppIcon :name="showForm ? 'x' : 'plus'" />{{ showForm ? '取消新增' : '新增帳戶' }}
       </button>
     </div>
 
-    <div v-if="loadError" class="error-banner">{{ loadError }}</div>
+    <div v-if="loadError" class="panel-body">
+      <div class="error-banner">{{ loadError }}</div>
+    </div>
 
-    <form v-if="showForm" class="inline-card" @submit.prevent="handleCreate">
-      <div v-if="formError" class="error-banner">{{ formError }}</div>
-      <div class="field">
-        <label for="acc-name">帳戶名稱</label>
-        <input id="acc-name" v-model="name" type="text" required maxlength="100" />
+    <form v-if="showForm" class="panel-body add-form" @submit.prevent="handleCreate">
+      <div v-if="formError" class="error-banner" role="alert">{{ formError }}</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="acc-name">帳戶名稱</label>
+          <input id="acc-name" v-model="name" type="text" required maxlength="100" />
+        </div>
+        <div class="form-field">
+          <label for="acc-type">類型</label>
+          <select id="acc-type" v-model="type">
+            <option value="cash">現金</option>
+            <option value="bank">銀行</option>
+            <option value="credit_card">信用卡</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="acc-balance">起始餘額</label>
+          <input id="acc-balance" v-model.number="balance" type="number" step="1" />
+        </div>
+        <div class="form-field">
+          <span class="label">預設支出帳戶</span>
+          <label class="check"><input v-model="isDefaultExpense" type="checkbox" />新增交易時預設選取此帳戶</label>
+        </div>
       </div>
-      <div class="field">
-        <label for="acc-type">類型</label>
-        <select id="acc-type" v-model="type" class="select-input">
-          <option value="cash">現金</option>
-          <option value="bank">銀行</option>
-          <option value="credit_card">信用卡</option>
-        </select>
+      <div class="row form-actions">
+        <button class="btn primary" type="submit" :disabled="isSubmitting">
+          {{ isSubmitting ? '新增中…' : '確認新增' }}
+        </button>
+        <button class="btn" type="button" @click="toggleForm">取消</button>
       </div>
-      <div class="field">
-        <label for="acc-balance">起始餘額</label>
-        <input id="acc-balance" v-model.number="balance" type="number" step="1" />
-      </div>
-      <div class="field" style="display: flex; align-items: center; gap: 8px">
-        <input id="acc-default" v-model="isDefaultExpense" type="checkbox" style="width: auto" />
-        <label for="acc-default" style="margin: 0">設為預設支出帳戶</label>
-      </div>
-      <button class="btn-primary" type="submit" :disabled="isSubmitting">
-        {{ isSubmitting ? '新增中…' : '確認新增' }}
-      </button>
     </form>
 
-    <p v-if="!isLoading && accounts.length === 0" style="color: #6b7a74; font-size: 13px">
-      尚未建立任何帳戶。
-    </p>
-
-    <ul style="list-style: none; padding: 0; margin: 0">
-      <li v-for="account in accounts" :key="account.id" class="row-card" style="flex-direction: column; align-items: stretch">
-        <div style="display: flex; justify-content: space-between; align-items: center">
-          <div>
-            <strong>{{ account.name }}</strong>
-            <span style="color: #6b7a74; font-size: 12px; margin-left: 8px">
-              {{ ACCOUNT_TYPE_LABEL[account.type] }}
-            </span>
-            <span v-if="account.is_default_expense" class="default-badge">預設支出帳戶</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 12px">
-            <template v-if="editingId !== account.id">
-              <span :style="{ color: account.balance < 0 ? 'var(--color-danger)' : 'var(--color-ink)' }">
-                {{ formatCurrency(account.balance) }}
-              </span>
-              <button v-if="!account.is_default_expense" class="btn-text" @click="setDefaultExpense(account.id)">
-                設為預設
-              </button>
-              <button class="btn-text" @click="startEdit(account)">調整餘額</button>
-              <button class="btn-text-danger" @click="handleDelete(account.id)">刪除</button>
-            </template>
-          </div>
-        </div>
-
-        <div v-if="editingId === account.id" class="edit-balance-row">
-          <div v-if="editError" class="error-banner" style="margin: 8px 0">{{ editError }}</div>
-          <input v-model.number="editBalance" type="number" step="1" class="balance-input" />
-          <button class="btn-primary" style="width: auto; padding: 6px 14px" :disabled="isSavingEdit" @click="saveEdit(account.id)">
-            {{ isSavingEdit ? '儲存中…' : '儲存' }}
-          </button>
-          <button class="btn-text" @click="cancelEdit">取消</button>
-        </div>
-      </li>
-    </ul>
-  </div>
+    <div v-if="accounts.length" class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>帳戶名稱</th>
+            <th>類型</th>
+            <th class="num">餘額</th>
+            <th class="num">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="account in accounts" :key="account.id">
+            <td>
+              <b>{{ account.name }}</b>
+              <span v-if="account.is_default_expense" class="pill ok default-pill">預設支出帳戶</span>
+            </td>
+            <td class="nowrap">{{ ACCOUNT_TYPE_LABEL[account.type] }}</td>
+            <td class="num">
+              <form v-if="editingId === account.id" class="edit-balance" @submit.prevent="saveEdit(account.id)">
+                <input v-model.number="editBalance" type="number" step="1" aria-label="新餘額" />
+                <button class="btn primary sm" type="submit" :disabled="isSavingEdit">
+                  {{ isSavingEdit ? '儲存中…' : '儲存' }}
+                </button>
+                <button class="btn sm" type="button" @click="cancelEdit">取消</button>
+                <div v-if="editError" class="field-error">{{ editError }}</div>
+              </form>
+              <span v-else class="amount" :class="{ expense: account.balance < 0 }">{{ formatCurrency(account.balance) }}</span>
+            </td>
+            <td class="actions">
+              <template v-if="editingId !== account.id">
+                <button v-if="!account.is_default_expense" type="button" class="btn sm" @click="setDefaultExpense(account.id)">
+                  設為預設
+                </button>
+                <button type="button" class="btn sm" @click="startEdit(account)"><AppIcon name="edit" />調整餘額</button>
+                <button type="button" class="btn danger sm" @click="handleDelete(account.id)"><AppIcon name="trash" />刪除</button>
+              </template>
+            </td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2"><b>合計</b></td>
+            <td class="num">
+              <span class="amount" :class="{ expense: totalBalance < 0 }">{{ formatCurrency(totalBalance) }}</span>
+            </td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <p v-else-if="!isLoading && !loadError" class="empty">尚未建立任何帳戶。</p>
+  </section>
 </template>
 
 <style scoped>
-.inline-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 12px;
-}
-
-.select-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 14px;
-  background: var(--color-bg);
-}
-
-.row-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  margin-bottom: 8px;
-}
-
-.btn-text-danger {
-  background: none;
-  border: none;
-  color: var(--color-danger);
-  font-size: 13px;
-  padding: 4px 8px;
-}
-
-.default-badge {
-  display: inline-block;
-  background: var(--color-primary);
-  color: #fff;
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  margin-left: 8px;
-}
-
-.btn-text {
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-size: 13px;
-  padding: 4px 8px;
-}
-
-.edit-balance-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--color-border);
-}
-
-.balance-input {
-  flex: 1;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 14px;
-}
+.add-form { border-bottom: 1px solid var(--line-soft); }
+.form-actions { margin-top: 16px; }
+.check { display: inline-flex; align-items: center; gap: 8px; min-height: var(--h-btn); cursor: pointer; }
+.check input[type=checkbox] { width: 15px; flex: none; }
+.default-pill { margin-left: 8px; }
+.edit-balance { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.edit-balance input { width: 140px; text-align: right; }
+.field-error { flex-basis: 100%; color: var(--bad); font-size: 12px; text-align: right; }
+tfoot td { border-top: 1px solid var(--line); background: rgb(255 255 255 / 40%); }
 </style>
