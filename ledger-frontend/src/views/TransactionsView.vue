@@ -3,9 +3,6 @@ import TransactionList from '@/components/TransactionList.vue'
 </script>
 
 <template>
-  <section class="panel">
-    <div class="panel-body">
-      <TransactionList :refresh-key="0" />
-    </div>
-  </section>
+  <!-- TransactionList 自帶「交易查詢」「交易明細」兩個面板 -->
+  <TransactionList />
 </template>

@@ -3,6 +3,7 @@
 export type IconName =
   | 'book' | 'chart' | 'receipt' | 'wallet' | 'folder' | 'tag' | 'transfer'
   | 'users' | 'history' | 'logout' | 'clock' | 'trend' | 'pie' | 'ranking' | 'calendar'
+  | 'income' | 'expense' | 'plus' | 'edit' | 'trash' | 'download' | 'search' | 'filter' | 'x' | 'table'
 
 const PATHS: Record<IconName, string> = {
   book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="M9 7h7M9 11h5"/>',
@@ -20,6 +21,16 @@ const PATHS: Record<IconName, string> = {
   pie: '<path d="M21.2 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
   ranking: '<path d="M10 6h11M10 12h11M10 18h11"/><path d="M4 6h1v4M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>',
   calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  income: '<path d="M17 7 7 17"/><path d="M17 17H7V7"/>',
+  expense: '<path d="M7 17 17 7"/><path d="M7 7h10v10"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  trash: '<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+  filter: '<path d="M22 3H2l8 9.46V19l4 2v-8.54z"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  table: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
 }
 
 defineProps<{ name: IconName }>()

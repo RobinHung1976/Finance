@@ -1,32 +1,24 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import CategoryPicker from './CategoryPicker.vue'
+import type { AxiosError } from 'axios'
+import AppIcon from './AppIcon.vue'
 import CategoryFilterPicker from './CategoryFilterPicker.vue'
 import AccountFilterPicker from './AccountFilterPicker.vue'
-import TagPicker from './TagPicker.vue'
 import TagFilterPicker from './TagFilterPicker.vue'
-import { fetchAccounts, fetchCategories, fetchTags, fetchTransactions, createTransaction, updateTransaction, deleteTransaction } from '@/api/ledgerApi'
-import { formatCurrency } from '@/utils/ledgerLabels'
+import TransactionFormDialog from './TransactionFormDialog.vue'
+import { fetchAccounts, fetchCategories, fetchTags, fetchTransactions, deleteTransaction } from '@/api/ledgerApi'
+import { formatCurrency, ENTRY_TYPE_LABEL } from '@/utils/ledgerLabels'
+import { presetRange, toLocalISODate, todayLocal, type RangePreset } from '@/utils/date'
+import { toCsv, downloadCsv } from '@/utils/csv'
 import type { AccountOut, CategoryOut, EntryType, TagOut, TransactionOut } from '@/types/ledger'
-import type { AxiosError } from 'axios'
 import type { ApiError } from '@/types/api'
 
-function todayLocalISODate(): string {
-  const d = new Date()
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function firstDayOfMonthISODate(): string {
-  const d = new Date()
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  return `${year}-${month}-01`
-}
-
-const props = defineProps<{ refreshKey: number }>()
+const PRESETS: { key: RangePreset; label: string }[] = [
+  { key: 'thisMonth', label: '本月' },
+  { key: 'lastMonth', label: '上月' },
+  { key: 'last3Months', label: '近 3 個月' },
+  { key: 'thisYear', label: '今年' },
+]
 
 const accounts = ref<AccountOut[]>([])
 const categories = ref<CategoryOut[]>([])
@@ -35,9 +27,10 @@ const transactions = ref<TransactionOut[]>([])
 const isLoading = ref(true)
 const loadError = ref('')
 
-// 篩選條件
-const filterStartDate = ref(firstDayOfMonthISODate())
-const filterEndDate = ref(todayLocalISODate())
+// ---------- 查詢條件(後端篩選,條件一變就重新查詢) ----------
+const initialRange = presetRange('thisMonth')
+const filterStartDate = ref(initialRange.start)
+const filterEndDate = ref(initialRange.end)
 const filterAccountId = ref('')
 const filterCategoryId = ref('')
 const filterTagIds = ref<string[]>([])
@@ -45,46 +38,35 @@ const filterMinAmount = ref<number | null>(null)
 const filterMaxAmount = ref<number | null>(null)
 const showAdvancedFilter = ref(false)
 
-// 新增表單
-const showForm = ref(false)
-const formType = ref<EntryType>('expense')
-const formAccountId = ref('')
-const formCategoryId = ref('')
-const formAmount = ref<number | null>(null)
-const formDate = ref(todayLocalISODate())
-const formNote = ref('')
-const formTagIds = ref<string[]>([])
-const formError = ref('')
-const isSubmitting = ref(false)
+// ---------- 結果篩選(前端,不重新查詢) ----------
+const typeFilter = ref<Record<EntryType, boolean>>({ expense: true, income: true })
+const searchText = ref('')
+type SortKey = 'date' | 'amount'
+const sortKey = ref<SortKey>('date')
+const sortDesc = ref(true)
 
-// 編輯既有交易(null = 非編輯模式)
-const editingId = ref<string | null>(null)
-const editAccountId = ref('')
-const editCategoryId = ref('')
-const editAmount = ref<number | null>(null)
-const editType = ref<EntryType>('expense')
-const editDate = ref('')
-const editNote = ref('')
-const editTagIds = ref<string[]>([])
-const editError = ref('')
-const isSavingEdit = ref(false)
+const formDialog = ref<InstanceType<typeof TransactionFormDialog> | null>(null)
 
+// ---------- 名稱查表 ----------
+const accountById = computed(() => new Map(accounts.value.map((a) => [a.id, a])))
+const categoryById = computed(() => new Map(categories.value.map((c) => [c.id, c])))
 
 function accountName(id: string): string {
-  return accounts.value.find((a) => a.id === id)?.name ?? '（已刪除帳戶）'
+  return accountById.value.get(id)?.name ?? '（已刪除帳戶）'
 }
 function categoryName(id: string): string {
   const names: string[] = []
-  let current = categories.value.find((c) => c.id === id)
-  while (current) {
+  const seen = new Set<string>() // 防呆:資料若出現循環 parent 不會卡死
+  let current = categoryById.value.get(id)
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id)
     names.unshift(current.name)
-    const parentId: string | null = current.parent_id
-    current = parentId ? categories.value.find((c) => c.id === parentId) : undefined
+    current = current.parent_id ? categoryById.value.get(current.parent_id) : undefined
   }
   return names.length > 0 ? names.join(' - ') : '（已刪除分類）'
 }
 
-
+// ---------- 載入 ----------
 async function loadReferenceData() {
   const [accountsData, categoriesData, tagsData] = await Promise.all([fetchAccounts(), fetchCategories(), fetchTags()])
   accounts.value = accountsData
@@ -92,11 +74,13 @@ async function loadReferenceData() {
   tags.value = tagsData
 }
 
+let requestSeq = 0 // 條件快速連續變動時,只採用最後一次查詢的結果
 async function loadTransactions() {
+  const seq = ++requestSeq
   isLoading.value = true
   loadError.value = ''
   try {
-    transactions.value = await fetchTransactions({
+    const data = await fetchTransactions({
       start_date: filterStartDate.value || undefined,
       end_date: filterEndDate.value || undefined,
       account_id: filterAccountId.value || undefined,
@@ -105,640 +89,366 @@ async function loadTransactions() {
       min_amount: filterMinAmount.value ?? undefined,
       max_amount: filterMaxAmount.value ?? undefined,
     })
+    if (seq === requestSeq) transactions.value = data
   } catch {
-    loadError.value = '載入交易紀錄失敗'
+    if (seq === requestSeq) loadError.value = '載入交易紀錄失敗'
   } finally {
-    isLoading.value = false
+    if (seq === requestSeq) isLoading.value = false
   }
 }
 
-onMounted(async () => {
-  await loadReferenceData()
-  await loadTransactions()
-})
-
-// 帳戶/分類在其他頁籤變動時(refreshKey 改變)重新載入參照資料
-watch(
-  () => props.refreshKey,
-  async () => {
+async function reloadAll() {
+  try {
     await loadReferenceData()
+  } catch {
+    loadError.value = '載入帳戶/分類資料失敗'
   }
-)
+  await loadTransactions()
+}
+
+onMounted(reloadAll)
 
 watch(
   [filterStartDate, filterEndDate, filterAccountId, filterCategoryId, filterTagIds, filterMinAmount, filterMaxAmount],
-  loadTransactions
+  loadTransactions,
 )
 
-const activeAdvancedFilterCount = computed(() => {
-  let count = 0
-  if (filterAccountId.value) count++
-  if (filterCategoryId.value) count++
-  if (filterTagIds.value.length) count++
-  return count
+// ---------- 查詢條件操作 ----------
+function applyPreset(key: RangePreset) {
+  const r = presetRange(key)
+  filterStartDate.value = r.start
+  filterEndDate.value = r.end
+}
+function isPresetActive(key: RangePreset): boolean {
+  const r = presetRange(key)
+  return r.start === filterStartDate.value && r.end === filterEndDate.value
+}
+
+const activeAdvancedFilterCount = computed(
+  () => [filterAccountId.value, filterCategoryId.value, filterTagIds.value.length].filter(Boolean).length,
+)
+
+function toggleType(t: EntryType) {
+  typeFilter.value = { ...typeFilter.value, [t]: !typeFilter.value[t] }
+}
+
+function clearFilters() {
+  filterAccountId.value = ''
+  filterCategoryId.value = ''
+  filterTagIds.value = []
+  filterMinAmount.value = null
+  filterMaxAmount.value = null
+  typeFilter.value = { expense: true, income: true }
+  searchText.value = ''
+}
+
+// ---------- 結果 ----------
+function searchableText(tx: TransactionOut): string {
+  return [categoryName(tx.category_id), accountName(tx.account_id), tx.note ?? '', ...tx.tags.map((t) => t.name), String(tx.amount)]
+    .join(' ')
+    .toLowerCase()
+}
+
+const visibleTransactions = computed(() => {
+  const keyword = searchText.value.trim().toLowerCase()
+  const rows = transactions.value.filter(
+    (tx) => typeFilter.value[tx.type] && (!keyword || searchableText(tx).includes(keyword)),
+  )
+  const dir = sortDesc.value ? -1 : 1
+  // 後端已依日期新到舊排序;排序穩定(相同值維持原順序)
+  return rows
+    .map((tx, i) => ({ tx, i }))
+    .sort((a, b) => {
+      const diff =
+        sortKey.value === 'amount' ? a.tx.amount - b.tx.amount : a.tx.date.localeCompare(b.tx.date)
+      return diff !== 0 ? diff * dir : a.i - b.i
+    })
+    .map(({ tx }) => tx)
 })
 
-const totalExpense = computed(() =>
-  transactions.value.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0)
-)
+function setSort(key: SortKey) {
+  if (sortKey.value === key) {
+    sortDesc.value = !sortDesc.value
+  } else {
+    sortKey.value = key
+    sortDesc.value = true
+  }
+}
+function sortMark(key: SortKey): string {
+  return sortKey.value === key ? (sortDesc.value ? ' ▼' : ' ▲') : ''
+}
+
 const totalIncome = computed(() =>
-  transactions.value.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)
+  visibleTransactions.value.filter((t) => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
+)
+const totalExpense = computed(() =>
+  visibleTransactions.value.filter((t) => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0),
 )
 const totalBalance = computed(() => accounts.value.reduce((sum, a) => sum + a.balance, 0))
 
-// 依日期分組(後端已依日期新到舊排序,這裡只是分段插入標題)
-const groupedTransactions = computed(() => {
-  const groups: { date: string; items: TransactionOut[] }[] = []
-  for (const tx of transactions.value) {
-    const lastGroup = groups[groups.length - 1]
-    if (lastGroup && lastGroup.date === tx.date) {
-      lastGroup.items.push(tx)
-    } else {
-      groups.push({ date: tx.date, items: [tx] })
-    }
-  }
-  return groups
-})
-
-function formatDateHeader(isoDate: string): string {
-  const today = todayLocalISODate()
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  const yesterdayStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
-
-  if (isoDate === today) return '今天'
-  if (isoDate === yesterdayStr) return '昨天'
-
-  const [, month, day] = isoDate.split('-')
-  return `${Number(month)}月${Number(day)}日`
+function dateHint(isoDate: string): string {
+  if (isoDate === todayLocal()) return '今天'
+  const y = new Date()
+  y.setDate(y.getDate() - 1)
+  return isoDate === toLocalISODate(y) ? '昨天' : ''
 }
 
-function openAddForm() {
-  formDate.value = todayLocalISODate() // 每次開啟都重設為今天,避免舊值殘留
-  if (formType.value === 'expense' && !formAccountId.value) {
-    const defaultAccount = accounts.value.find((a) => a.is_default_expense)
-    if (defaultAccount) formAccountId.value = defaultAccount.id
-  }
-  showForm.value = !showForm.value
+// ---------- 新增 / 編輯 / 刪除 ----------
+function openCreate() {
+  formDialog.value?.openCreate()
+}
+function openEdit(tx: TransactionOut) {
+  formDialog.value?.openEdit(tx)
 }
 
-function handleCategoryCreated(category: CategoryOut) {
-  categories.value.push(category)
-}
-
-function handleTagCreated(tag: TagOut) {
-  tags.value.push(tag)
-}
-
-async function handleCreate() {
-  formError.value = ''
-
-  if (!formAccountId.value) {
-    formError.value = '請選擇帳戶'
-    return
-  }
-  if (!formCategoryId.value) {
-    formError.value = '請選擇分類'
-    return
-  }
-  if (!formAmount.value || formAmount.value <= 0) {
-    formError.value = '金額必須大於 0'
-    return
-  }
-
-  isSubmitting.value = true
+async function handleDelete(tx: TransactionOut) {
+  const label = `${tx.date} ${categoryName(tx.category_id)} ${formatCurrency(tx.amount)}`
+  if (!confirm(`確定刪除此筆交易？\n${label}\n帳戶餘額將會回復。`)) return
   try {
-    await createTransaction({
-      account_id: formAccountId.value,
-      category_id: formCategoryId.value,
-      amount: formAmount.value,
-      type: formType.value,
-      date: formDate.value,
-      note: formNote.value.trim() || null,
-      tag_ids: formTagIds.value,
-    })
-    formAmount.value = null
-    formNote.value = ''
-    formTagIds.value = []
-    showForm.value = false
-    await loadReferenceData() // 帳戶餘額已變動
-    await loadTransactions()
-  } catch (err) {
-    const axiosErr = err as AxiosError<ApiError>
-    formError.value = axiosErr.response?.data?.detail ?? '新增失敗'
-  } finally {
-    isSubmitting.value = false
-  }
-}
-
-async function handleDelete(id: string) {
-  if (!confirm('確定刪除此筆交易？帳戶餘額將會回復。')) return
-  try {
-    await deleteTransaction(id)
-    await loadReferenceData()
-    await loadTransactions()
+    await deleteTransaction(tx.id)
+    await reloadAll() // 帳戶餘額已變動
   } catch (err) {
     const axiosErr = err as AxiosError<ApiError>
     alert(axiosErr.response?.data?.detail ?? '刪除失敗')
   }
 }
 
-function startEdit(tx: TransactionOut) {
-  editingId.value = tx.id
-  editAccountId.value = tx.account_id
-  editCategoryId.value = tx.category_id
-  editAmount.value = tx.amount
-  editType.value = tx.type
-  editDate.value = tx.date
-  editNote.value = tx.note ?? ''
-  editTagIds.value = tx.tags.map((t) => t.id)
-  editError.value = ''
-}
-
-function cancelEdit() {
-  editingId.value = null
-  editError.value = ''
-}
-
-async function saveEdit(id: string) {
-  editError.value = ''
-
-  if (!editAmount.value || editAmount.value <= 0) {
-    editError.value = '金額必須大於 0'
-    return
-  }
-
-  isSavingEdit.value = true
-  try {
-    await updateTransaction(id, {
-      account_id: editAccountId.value,
-      category_id: editCategoryId.value,
-      amount: editAmount.value,
-      type: editType.value,
-      date: editDate.value,
-      note: editNote.value.trim() || null,
-      tag_ids: editTagIds.value,
-    })
-    editingId.value = null
-    await loadReferenceData() // 帳戶餘額已因金額/類型變動而重新計算
-    await loadTransactions()
-  } catch (err) {
-    const axiosErr = err as AxiosError<ApiError>
-    editError.value = axiosErr.response?.data?.detail ?? '更新失敗'
-  } finally {
-    isSavingEdit.value = false
-  }
+// ---------- 匯出 CSV(目前畫面上的結果,含前端篩選與排序) ----------
+function exportCsv() {
+  const header = ['日期', '類型', '分類', '帳戶', '消費品項', '備註', '金額', '收支(支出為負)']
+  const rows = visibleTransactions.value.map((tx) => [
+    tx.date,
+    ENTRY_TYPE_LABEL[tx.type],
+    categoryName(tx.category_id),
+    accountName(tx.account_id),
+    tx.tags.map((t) => t.name).join('、'),
+    tx.note ?? '',
+    tx.amount,
+    tx.type === 'expense' ? -tx.amount : tx.amount,
+  ])
+  downloadCsv(`交易紀錄_${filterStartDate.value || '起'}_${filterEndDate.value || '今'}.csv`, toCsv(header, rows))
 }
 </script>
 
 <template>
-  <div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
-      <h2 style="font-size: 15px; color: #6b7a74; text-transform: uppercase; letter-spacing: 0.04em; margin: 0">
-        交易紀錄
-      </h2>
-      <button
-        class="btn-primary"
-        style="width: auto; padding: 6px 14px; font-size: 13px"
-        @click="openAddForm"
-      >
-        {{ showForm ? '取消' : '+ 新增交易' }}
-      </button>
+  <!-- ========== 查詢 ========== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2><AppIcon name="search" />交易查詢</h2>
+      <span class="spacer"></span>
+      <button type="button" class="btn primary" @click="openCreate"><AppIcon name="plus" />新增交易</button>
     </div>
-
-    <!-- 篩選列 -->
-    <div class="filter-bar">
-      <input v-model="filterStartDate" type="date" class="filter-input" title="開始日期" />
-      <span style="color: #6b7a74">至</span>
-      <input v-model="filterEndDate" type="date" class="filter-input" title="結束日期" />
-      <button type="button" class="filter-input advanced-filter-toggle" @click="showAdvancedFilter = !showAdvancedFilter">
-        進階篩選<span v-if="activeAdvancedFilterCount">（{{ activeAdvancedFilterCount }}）</span>
-      </button>
-      <input
-        v-model.number="filterMinAmount"
-        type="number"
-        min="0"
-        placeholder="最低金額"
-        class="filter-input"
-        style="width: 100px"
-      />
-      <span style="color: #6b7a74">至</span>
-      <input
-        v-model.number="filterMaxAmount"
-        type="number"
-        min="0"
-        placeholder="最高金額"
-        class="filter-input"
-        style="width: 100px"
-      />
-    </div>
-
-    <div v-if="showAdvancedFilter" class="advanced-filter-panel">
-      <div class="advanced-filter-block">
-        <h4 class="advanced-filter-label">帳戶</h4>
-        <AccountFilterPicker v-model="filterAccountId" :accounts="accounts" />
-      </div>
-      <div class="advanced-filter-block">
-        <h4 class="advanced-filter-label">分類</h4>
-        <CategoryFilterPicker v-model="filterCategoryId" :categories="categories" />
-      </div>
-      <div class="advanced-filter-block">
-        <h4 class="advanced-filter-label">消費品項</h4>
-        <TagFilterPicker v-model="filterTagIds" :tags="tags" />
-      </div>
-    </div>
-
-    <div v-if="loadError" class="error-banner">{{ loadError }}</div>
-
-    <!-- 新增表單 -->
-    <form v-if="showForm" class="inline-card" @submit.prevent="handleCreate">
-      <div v-if="formError" class="error-banner">{{ formError }}</div>
-
-      <div class="field">
-        <label for="tx-type">收支類型</label>
-        <select id="tx-type" v-model="formType" class="select-input">
-          <option value="expense">支出</option>
-          <option value="income">收入</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="tx-account">帳戶</label>
-        <select id="tx-account" v-model="formAccountId" class="select-input" required>
-          <option value="" disabled>請選擇帳戶</option>
-          <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>分類</label>
-        <CategoryPicker
-          v-model="formCategoryId"
-          :type="formType"
-          :categories="categories"
-          @created="handleCategoryCreated"
-        />
-      </div>
-      <div class="field">
-        <label>消費品項（選填）</label>
-        <TagPicker v-model="formTagIds" :tags="tags" @created="handleTagCreated" />
-      </div>
-      <div class="field">
-        <label for="tx-amount">金額</label>
-        <input id="tx-amount" v-model.number="formAmount" type="number" min="1" step="1" required />
-      </div>
-      <div class="field">
-        <label for="tx-date">日期</label>
-        <input id="tx-date" v-model="formDate" type="date" required />
-      </div>
-      <div class="field">
-        <label for="tx-note">備註（選填）</label>
-        <input id="tx-note" v-model="formNote" type="text" maxlength="500" />
-      </div>
-      <button class="btn-primary" type="submit" :disabled="isSubmitting">
-        {{ isSubmitting ? '新增中…' : '確認新增' }}
-      </button>
-    </form>
-
-    <!-- 帳戶餘額總覽 -->
-    <div v-if="!isLoading && accounts.length > 0">
-      <h3 class="section-label">帳戶餘額</h3>
-      <div class="account-balance-bar">
-        <span v-for="a in accounts" :key="a.id" class="balance-chip">
-          {{ a.name }}：<strong>{{ formatCurrency(a.balance) }}</strong>
-        </span>
-        <span class="balance-chip total-chip">
-          總計：<strong>{{ formatCurrency(totalBalance) }}</strong>
-        </span>
-      </div>
-    </div>
-
-    <!-- 統計摘要 -->
-    <div v-if="!isLoading">
-      <h3 class="section-label">
-        本期收支
-        <span class="date-range">（{{ filterStartDate || '起' }} ～ {{ filterEndDate || '今' }}）</span>
-      </h3>
-      <div class="summary-bar">
-        <span>收入 <strong style="color: var(--color-primary)">{{ formatCurrency(totalIncome) }}</strong></span>
-        <span>支出 <strong style="color: var(--color-danger)">{{ formatCurrency(totalExpense) }}</strong></span>
-        <span>結餘 <strong>{{ formatCurrency(totalIncome - totalExpense) }}</strong></span>
-      </div>
-    </div>
-
-    <p v-if="!isLoading && transactions.length === 0" style="color: #6b7a74; font-size: 13px">
-      沒有符合條件的交易紀錄。
-    </p>
-
-    <div v-for="group in groupedTransactions" :key="group.date" class="date-group">
-      <h4 class="date-header">{{ formatDateHeader(group.date) }}</h4>
-
-      <div
-        v-for="tx in group.items"
-        :key="tx.id"
-        class="tx-card"
-      >
-        <template v-if="editingId !== tx.id">
-          <div class="tx-card-main">
-            <div class="tx-card-info">
-              <strong class="tx-category">{{ categoryName(tx.category_id) }}</strong>
-              <span class="tx-sub">{{ accountName(tx.account_id) }}<template v-if="tx.note"> · {{ tx.note }}</template></span>
-              <div v-if="tx.tags.length" class="tx-tags">
-                <span v-for="t in tx.tags" :key="t.id" class="tag-chip">{{ t.name }}</span>
-              </div>
-            </div>
-            <span
-              class="tx-amount"
-              :style="{ color: tx.type === 'income' ? 'var(--color-primary)' : 'var(--color-danger)' }"
+    <div class="panel-body">
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="q-start">開始日期</label>
+          <input id="q-start" v-model="filterStartDate" type="date" :max="filterEndDate || undefined" />
+        </div>
+        <div class="form-field">
+          <label for="q-end">結束日期</label>
+          <input id="q-end" v-model="filterEndDate" type="date" :min="filterStartDate || undefined" />
+        </div>
+        <div class="form-field span2">
+          <span class="label">快速選擇</span>
+          <div class="row">
+            <button
+              v-for="p in PRESETS"
+              :key="p.key"
+              type="button"
+              class="btn sm"
+              :class="{ on: isPresetActive(p.key) }"
+              :aria-pressed="isPresetActive(p.key)"
+              @click="applyPreset(p.key)"
             >
-              {{ tx.type === 'income' ? '+' : '-' }}{{ formatCurrency(tx.amount) }}
-            </span>
-          </div>
-          <div class="tx-card-actions">
-            <button class="btn-edit" @click="startEdit(tx)">編輯</button>
-            <button class="btn-delete" @click="handleDelete(tx.id)">刪除</button>
-          </div>
-        </template>
-
-        <form v-else class="edit-tx-form" @submit.prevent="saveEdit(tx.id)">
-          <div v-if="editError" class="error-banner">{{ editError }}</div>
-          <div class="edit-tx-grid">
-            <select v-model="editType" class="select-input">
-              <option value="expense">支出</option>
-              <option value="income">收入</option>
-            </select>
-            <select v-model="editAccountId" class="select-input">
-              <option v-for="a in accounts" :key="a.id" :value="a.id">{{ a.name }}</option>
-            </select>
-            <input v-model.number="editAmount" type="number" min="1" step="1" class="select-input" />
-            <input v-model="editDate" type="date" class="select-input" />
-            <input v-model="editNote" type="text" maxlength="500" placeholder="備註" class="select-input" style="grid-column: span 2" />
-          </div>
-          <div style="margin-top: 8px">
-            <CategoryPicker
-              v-model="editCategoryId"
-              :type="editType"
-              :categories="categories"
-              @created="handleCategoryCreated"
-            />
-          </div>
-          <div style="margin-top: 8px">
-            <TagPicker v-model="editTagIds" :tags="tags" @created="handleTagCreated" />
-          </div>
-          <div style="display: flex; gap: 8px; margin-top: 8px">
-            <button class="btn-primary" type="submit" style="width: auto; padding: 6px 14px" :disabled="isSavingEdit">
-              {{ isSavingEdit ? '儲存中…' : '儲存' }}
+              {{ p.label }}
             </button>
-            <button type="button" class="btn-text" @click="cancelEdit">取消</button>
           </div>
-        </form>
+        </div>
+
+        <div class="form-field span2">
+          <span class="label">類型</span>
+          <div class="keypad" role="group" aria-label="收支類型">
+            <button
+              type="button"
+              class="key"
+              :class="{ active: typeFilter.expense }"
+              :aria-pressed="typeFilter.expense"
+              @click="toggleType('expense')"
+            >
+              <AppIcon name="expense" class="ic-expense" />支出
+            </button>
+            <button
+              type="button"
+              class="key"
+              :class="{ active: typeFilter.income }"
+              :aria-pressed="typeFilter.income"
+              @click="toggleType('income')"
+            >
+              <AppIcon name="income" class="ic-income" />收入
+            </button>
+          </div>
+        </div>
+        <div class="form-field span2">
+          <span class="label">金額區間</span>
+          <div class="row nowrap">
+            <input v-model.number="filterMinAmount" type="number" min="0" placeholder="最低金額" aria-label="最低金額" />
+            <span class="sep">~</span>
+            <input v-model.number="filterMaxAmount" type="number" min="0" placeholder="最高金額" aria-label="最高金額" />
+          </div>
+        </div>
+      </div>
+
+      <div class="row adv-row">
+        <button
+          type="button"
+          class="btn sm"
+          :class="{ on: showAdvancedFilter }"
+          :aria-expanded="showAdvancedFilter"
+          @click="showAdvancedFilter = !showAdvancedFilter"
+        >
+          <AppIcon name="filter" />進階篩選<template v-if="activeAdvancedFilterCount">（{{ activeAdvancedFilterCount }}）</template>
+        </button>
+        <span class="hint">帳戶、分類、消費品項</span>
+        <span class="spacer"></span>
+        <button type="button" class="btn ghost sm" @click="clearFilters"><AppIcon name="x" />清除條件</button>
+      </div>
+
+      <div v-if="showAdvancedFilter" class="adv-grid">
+        <div class="form-field">
+          <span class="label">帳戶</span>
+          <AccountFilterPicker v-model="filterAccountId" :accounts="accounts" />
+        </div>
+        <div class="form-field">
+          <span class="label">分類</span>
+          <CategoryFilterPicker v-model="filterCategoryId" :categories="categories" />
+        </div>
+        <div class="form-field">
+          <span class="label">消費品項</span>
+          <TagFilterPicker v-model="filterTagIds" :tags="tags" />
+        </div>
       </div>
     </div>
-  </div>
+  </section>
+
+  <!-- ========== 結果 ========== -->
+  <section class="panel">
+    <div class="panel-head">
+      <h2><AppIcon name="table" />交易明細</h2>
+      <span class="pill">{{ filterStartDate || '起' }} ~ {{ filterEndDate || '今' }}・{{ visibleTransactions.length }} 筆</span>
+      <span class="spacer"></span>
+      <button type="button" class="btn sm" :disabled="visibleTransactions.length === 0" @click="exportCsv">
+        <AppIcon name="download" />匯出 CSV
+      </button>
+    </div>
+
+    <div class="panel-body summary">
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-label">筆數</div>
+          <div class="stat-value">{{ visibleTransactions.length }}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">收入</div>
+          <div class="stat-value income">{{ formatCurrency(totalIncome) }}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">支出</div>
+          <div class="stat-value expense">{{ formatCurrency(totalExpense) }}</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">結餘（收入 − 支出）</div>
+          <div class="stat-value" :class="totalIncome - totalExpense < 0 ? 'expense' : 'income'">
+            {{ formatCurrency(totalIncome - totalExpense) }}
+          </div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">帳戶總餘額（目前）</div>
+          <div class="stat-value">{{ formatCurrency(totalBalance) }}</div>
+        </div>
+      </div>
+      <div v-if="accounts.length" class="row balances">
+        <span class="hint">帳戶餘額</span>
+        <span v-for="a in accounts" :key="a.id" class="pill" :class="{ bad: a.balance < 0 }">
+          {{ a.name }}：<b>{{ formatCurrency(a.balance) }}</b>
+        </span>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input v-model="searchText" type="search" placeholder="搜尋 分類 / 帳戶 / 品項 / 備註 / 金額" aria-label="搜尋" />
+      <span v-if="isLoading" class="hint">載入中…</span>
+    </div>
+
+    <div v-if="loadError" class="panel-body">
+      <div class="error-banner">{{ loadError }}</div>
+    </div>
+
+    <div v-if="visibleTransactions.length" class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th class="sortable" @click="setSort('date')">日期{{ sortMark('date') }}</th>
+            <th>類型</th>
+            <th>分類</th>
+            <th>帳戶</th>
+            <th>消費品項</th>
+            <th>備註</th>
+            <th class="num sortable" @click="setSort('amount')">金額{{ sortMark('amount') }}</th>
+            <th class="num">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="tx in visibleTransactions" :key="tx.id">
+            <td class="nowrap">
+              {{ tx.date }}<span v-if="dateHint(tx.date)" class="date-hint">{{ dateHint(tx.date) }}</span>
+            </td>
+            <td><span class="badge" :class="tx.type">{{ ENTRY_TYPE_LABEL[tx.type] }}</span></td>
+            <td class="cat">{{ categoryName(tx.category_id) }}</td>
+            <td class="nowrap">{{ accountName(tx.account_id) }}</td>
+            <td class="tags"><span v-for="t in tx.tags" :key="t.id" class="chip">{{ t.name }}</span></td>
+            <td class="note">{{ tx.note ?? '' }}</td>
+            <td class="num">
+              <span class="amount" :class="tx.type">
+                {{ tx.type === 'income' ? '+' : '-' }}{{ formatCurrency(tx.amount) }}
+              </span>
+            </td>
+            <td class="actions">
+              <button type="button" class="btn sm" @click="openEdit(tx)"><AppIcon name="edit" />編輯</button>
+              <button type="button" class="btn danger sm" @click="handleDelete(tx)"><AppIcon name="trash" />刪除</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p v-else-if="!isLoading && !loadError" class="empty">沒有符合條件的交易紀錄。</p>
+  </section>
+
+  <TransactionFormDialog
+    ref="formDialog"
+    :accounts="accounts"
+    :categories="categories"
+    :tags="tags"
+    @saved="reloadAll"
+    @category-created="(c: CategoryOut) => categories.push(c)"
+    @tag-created="(t: TagOut) => tags.push(t)"
+  />
 </template>
 
 <style scoped>
-.date-group {
-  margin-bottom: 16px;
-}
-
-.date-header {
-  font-size: 12px;
-  color: #6b7a74;
-  font-weight: 600;
-  margin: 0 0 8px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.tx-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 10px;
-}
-
-.tx-card-main {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.tx-card-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.tx-category {
-  font-size: 15px;
-  white-space: normal;
-  word-break: break-word;
-}
-
-.tx-sub {
-  font-size: 12px;
-  color: #6b7a74;
-}
-
-.tx-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
-}
-
-.tag-chip {
-  display: inline-block;
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.tx-amount {
-  font-size: 17px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.tx-card-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--color-border);
-}
-
-/* 編輯放左、刪除放右,顏色明顯區隔,並保留足夠間距避免手機誤觸 */
-.btn-edit {
-  background: none;
-  border: 1.5px solid var(--color-primary);
-  color: var(--color-primary);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 16px;
-  border-radius: 6px;
-}
-
-.btn-delete {
-  background: var(--color-danger);
-  border: 1.5px solid var(--color-danger);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 16px;
-  border-radius: 6px;
-}
-
-.inline-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 12px;
-}
-
-.select-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  font-size: 14px;
-  background: var(--color-bg);
-}
-
-.filter-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 12px;
-  align-items: center;
-}
-
-.filter-input {
-  padding: 6px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 13px;
-  background: var(--color-surface);
-}
-
-.advanced-filter-toggle {
-  cursor: pointer;
-}
-
-.advanced-filter-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 12px;
-  padding: 12px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-}
-
-.advanced-filter-block {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.advanced-filter-label {
-  font-size: 12px;
-  color: #6b7a74;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0;
-  font-weight: 600;
-}
-
-.summary-bar {
-  display: flex;
-  gap: 20px;
-  font-size: 13px;
-  color: #445048;
-  padding: 10px 0;
-  margin-bottom: 8px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.account-balance-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.section-label {
-  font-size: 12px;
-  color: #6b7a74;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0 0 6px;
-  font-weight: 600;
-}
-
-.date-range {
-  text-transform: none;
-  letter-spacing: normal;
-  font-weight: 400;
-}
-
-.balance-chip {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13px;
-  color: #445048;
-}
-
-.total-chip {
-  background: var(--color-primary);
-  color: #fff;
-  border-color: var(--color-primary);
-}
-
-.btn-text {
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-size: 13px;
-  padding: 4px 8px;
-}
-
-.edit-tx-form {
-  padding: 8px 0;
-}
-
-.edit-tx-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.row-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  margin-bottom: 8px;
-}
-
-.btn-text-danger {
-  background: none;
-  border: none;
-  color: var(--color-danger);
-  font-size: 13px;
-  padding: 4px 8px;
-}
+.keypad { padding: 0; }
+.ic-expense { color: #b8391a; }
+.ic-income { color: #1f8a4c; }
+.row.nowrap { flex-wrap: nowrap; }
+.row.nowrap input { min-width: 0; flex: 1; }
+.sep { color: var(--muted); font-weight: 700; }
+.adv-row { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+.adv-row .spacer { flex: 1; }
+.adv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 14px; }
+.summary { padding-bottom: 14px; }
+.balances { margin-top: 12px; }
+.balances b { font-variant-numeric: tabular-nums; }
+.date-hint { margin-left: 6px; font-size: 11.5px; font-weight: 700; color: var(--accent); }
+.cat { min-width: 120px; }
+.tags { min-width: 90px; }
+.note { min-width: 120px; max-width: 320px; white-space: normal; word-break: break-word; color: var(--text-2); }
 </style>
