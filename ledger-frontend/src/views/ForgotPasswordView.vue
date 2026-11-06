@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BrandBlock from '@/components/BrandBlock.vue'
 import { ref } from 'vue'
 import { forgotPassword } from '@/api/auth'
 
@@ -24,6 +25,7 @@ async function handleSubmit() {
 <template>
   <div class="auth-page">
     <div class="auth-card">
+      <BrandBlock />
       <template v-if="!isSubmitted">
         <h1>忘記密碼</h1>
         <p class="subtitle">輸入註冊時填寫的 email，我們會寄送重設連結</p>

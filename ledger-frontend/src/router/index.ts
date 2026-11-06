@@ -30,21 +30,44 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      // 登入後的頁面共用 AppLayout(側欄 + 頂部列),原 Dashboard 的分頁改為子路由
       path: '/',
-      name: 'dashboard',
-      component: () => import('@/views/DashboardView.vue'),
+      component: () => import('@/layouts/AppLayout.vue'),
+      children: [
+        // 保留 name 'dashboard':LoginView、路由守衛都以此導向首頁
+        { path: '', name: 'dashboard', redirect: { name: 'stats' } },
+        { path: 'stats', name: 'stats', component: () => import('@/views/StatsView.vue'), meta: { title: '統計' } },
+        {
+          path: 'transactions',
+          name: 'transactions',
+          component: () => import('@/views/TransactionsView.vue'),
+          meta: { title: '交易紀錄' },
+        },
+        { path: 'accounts', name: 'accounts', component: () => import('@/views/AccountsView.vue'), meta: { title: '帳戶' } },
+        {
+          path: 'categories',
+          name: 'categories',
+          component: () => import('@/views/CategoriesView.vue'),
+          meta: { title: '分類' },
+        },
+        { path: 'tags', name: 'tags', component: () => import('@/views/TagsView.vue'), meta: { title: '消費品項' } },
+        {
+          path: 'transfer',
+          name: 'transfer',
+          component: () => import('@/views/TransferView.vue'),
+          meta: { title: '匯入/匯出' },
+        },
+        { path: 'members', name: 'members', component: () => import('@/views/MembersView.vue'), meta: { title: '成員管理' } },
+        {
+          path: 'audit-logs',
+          name: 'audit-logs',
+          component: () => import('@/views/AuditLogView.vue'),
+          meta: { title: '操作紀錄', requiresAdmin: true },
+        },
+      ],
     },
-    {
-      path: '/members',
-      name: 'members',
-      component: () => import('@/views/MembersView.vue'),
-    },
-    {
-      path: '/audit-logs',
-      name: 'audit-logs',
-      component: () => import('@/views/AuditLogView.vue'),
-      meta: { requiresAdmin: true },
-    },
+    // 未知路徑導回首頁(避免舊書籤或打錯網址出現空白頁)
+    { path: '/:pathMatch(.*)*', redirect: { name: 'dashboard' } },
   ],
 })
 

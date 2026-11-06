@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BrandBlock from '@/components/BrandBlock.vue'
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { registerHousehold } from '@/api/auth'
@@ -54,6 +55,7 @@ async function handleSubmit() {
 <template>
   <div class="auth-page">
     <div class="auth-card">
+      <BrandBlock />
       <h1>建立家庭帳本</h1>
       <p class="subtitle">你將成為第一位管理者</p>
 

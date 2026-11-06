@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BrandBlock from '@/components/BrandBlock.vue'
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { resetPassword } from '@/api/auth'
@@ -48,6 +49,7 @@ async function handleSubmit() {
 <template>
   <div class="auth-page">
     <div class="auth-card">
+      <BrandBlock />
       <template v-if="!isDone">
         <h1>設定新密碼</h1>
 

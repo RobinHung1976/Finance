@@ -1,40 +1,51 @@
 <script setup lang="ts">
+import { presetRange, type RangePreset } from '@/utils/date'
+
 const startDate = defineModel<string>('startDate', { required: true })
 const endDate = defineModel<string>('endDate', { required: true })
 
-function thisYear() {
-  const today = new Date()
-  startDate.value = `${today.getFullYear()}-01-01`
-  endDate.value = today.toISOString().slice(0, 10)
+const PRESETS: { key: RangePreset; label: string }[] = [
+  { key: 'thisMonth', label: '本月' },
+  { key: 'lastMonth', label: '上月' },
+  { key: 'last3Months', label: '近 3 個月' },
+  { key: 'thisYear', label: '今年' },
+]
+
+function apply(key: RangePreset) {
+  const r = presetRange(key)
+  startDate.value = r.start
+  endDate.value = r.end
+}
+
+function isActive(key: RangePreset): boolean {
+  const r = presetRange(key)
+  return r.start === startDate.value && r.end === endDate.value
 }
 </script>
 
 <template>
   <div class="date-range">
-    <input type="date" v-model="startDate" :max="endDate" />
+    <input type="date" v-model="startDate" :max="endDate" aria-label="開始日期" />
     <span class="sep">~</span>
-    <input type="date" v-model="endDate" :min="startDate" />
-    <button class="reset-btn" @click="thisYear">今年</button>
+    <input type="date" v-model="endDate" :min="startDate" aria-label="結束日期" />
+    <span class="presets">
+      <button
+        v-for="p in PRESETS"
+        :key="p.key"
+        type="button"
+        class="btn sm"
+        :class="{ on: isActive(p.key) }"
+        :aria-pressed="isActive(p.key)"
+        @click="apply(p.key)"
+      >
+        {{ p.label }}
+      </button>
+    </span>
   </div>
 </template>
 
 <style scoped>
-.date-range { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; }
-.date-range input[type='date'] {
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 0.85rem;
-}
-.sep { color: #9ca3af; }
-.reset-btn {
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 0.8rem;
-  color: #4b5563;
-  cursor: pointer;
-}
-.reset-btn:hover { background: #e5e7eb; }
+.date-range { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sep { color: var(--muted); font-weight: 700; }
+.presets { display: inline-flex; gap: 6px; margin-left: 6px; }
 </style>

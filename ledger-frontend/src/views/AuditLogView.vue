@@ -75,55 +75,64 @@ onMounted(loadLogs)
 </script>
 
 <template>
-  <div style="max-width: 800px; margin: 0 auto; padding: 32px 24px">
-    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px">
-      <h1 style="font-size: 20px; margin: 0">操作紀錄</h1>
-      <router-link to="/" style="font-size: 13px; color: var(--color-primary); text-decoration: none">
-        返回理財首頁
-      </router-link>
-    </header>
-
-    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; font-size: 13px">
-      <select v-model="filterAction" style="padding: 6px 8px">
-        <option v-for="opt in actionOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-      </select>
-      <select v-model="filterResourceType" style="padding: 6px 8px">
-        <option v-for="opt in resourceOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-      </select>
-      <input v-model="filterStartDate" type="date" style="padding: 6px 8px" />
-      <span style="align-self: center">～</span>
-      <input v-model="filterEndDate" type="date" style="padding: 6px 8px" />
+  <section class="panel">
+    <div class="panel-head">
+      <div class="row filters">
+        <select v-model="filterAction" aria-label="動作">
+          <option v-for="opt in actionOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+        </select>
+        <select v-model="filterResourceType" aria-label="對象">
+          <option v-for="opt in resourceOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+        </select>
+        <input v-model="filterStartDate" type="date" aria-label="開始日期" />
+        <span class="sep">～</span>
+        <input v-model="filterEndDate" type="date" aria-label="結束日期" />
+      </div>
+      <span class="spacer"></span>
+      <span v-if="!isLoading" class="pill">共 {{ total }} 筆</span>
     </div>
 
-    <div v-if="loadError" class="error-banner">{{ loadError }}</div>
-
-    <table v-if="!isLoading && logs.length" style="width: 100%; border-collapse: collapse; font-size: 13px">
-      <thead>
-        <tr style="text-align: left; color: #6b7a74; border-bottom: 1px solid var(--color-border)">
-          <th style="padding: 8px">時間</th>
-          <th style="padding: 8px">操作人</th>
-          <th style="padding: 8px">動作</th>
-          <th style="padding: 8px">對象</th>
-          <th style="padding: 8px">說明</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="log in logs" :key="log.id" style="border-bottom: 1px solid var(--color-border)">
-          <td style="padding: 8px; white-space: nowrap">{{ formatTime(log.created_at) }}</td>
-          <td style="padding: 8px">{{ log.actor_name ?? '（已刪除成員）' }}</td>
-          <td style="padding: 8px">{{ actionLabel[log.action] ?? log.action }}</td>
-          <td style="padding: 8px">{{ resourceLabel[log.resource_type] ?? log.resource_type }}</td>
-          <td style="padding: 8px">{{ log.detail ?? '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p v-else-if="!isLoading" style="color: #6b7a74; font-size: 13px">查無符合條件的紀錄</p>
-
-    <div v-if="!isLoading && total > 0" style="display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 16px; font-size: 13px">
-      <button :disabled="currentPage === 1" @click="goToPage(currentPage - 1)" style="padding: 4px 10px; cursor: pointer">上一頁</button>
-      <span>{{ currentPage }} / {{ totalPages }}（共 {{ total }} 筆）</span>
-      <button :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)" style="padding: 4px 10px; cursor: pointer">下一頁</button>
+    <div v-if="loadError" class="panel-body">
+      <div class="error-banner">{{ loadError }}</div>
     </div>
-  </div>
+
+    <div v-if="!isLoading && logs.length" class="table-wrap">
+      <table class="grid">
+        <thead>
+          <tr>
+            <th>時間</th>
+            <th>操作人</th>
+            <th>動作</th>
+            <th>對象</th>
+            <th>說明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="log in logs" :key="log.id">
+            <td class="nowrap">{{ formatTime(log.created_at) }}</td>
+            <td>{{ log.actor_name ?? '（已刪除成員）' }}</td>
+            <td class="nowrap">{{ actionLabel[log.action] ?? log.action }}</td>
+            <td class="nowrap">{{ resourceLabel[log.resource_type] ?? log.resource_type }}</td>
+            <td>{{ log.detail ?? '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p v-else-if="!isLoading" class="empty">查無符合條件的紀錄</p>
+
+    <div v-if="!isLoading && total > 0" class="pager row">
+      <button class="btn sm" type="button" :disabled="currentPage === 1" @click="goToPage(currentPage - 1)">上一頁</button>
+      <span>{{ currentPage }} / {{ totalPages }}</span>
+      <button class="btn sm" type="button" :disabled="currentPage === totalPages" @click="goToPage(currentPage + 1)">
+        下一頁
+      </button>
+    </div>
+  </section>
 </template>
+
+<style scoped>
+.filters select { min-width: 120px; }
+.sep { color: var(--muted); font-weight: 700; }
+.pager { justify-content: center; padding: 14px; border-top: 1px solid var(--line-soft); font-size: 13px; }
+</style>
