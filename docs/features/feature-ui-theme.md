@@ -59,7 +59,8 @@
 | `.hint` / `.empty` / `.row` / `.notice` / `.flash` | 輔助樣式 |
 | 全域 `input[type=file]` | 檔案選擇按鈕為金屬按鍵外觀 |
 | `.category-picker` / `.tag-picker` / `.filter-picker-box`(含 `.option-btn`、`.tag-btn`、`.crumb`、`.search-results` …) | 五個選擇器共用樣式,元件內不再寫 scoped style;`.filter-picker-box.tags` 為膠囊形 |
-| `.key.add-key` + `.create-row` | 選擇器內「新增分類/新增品項」按鍵(開啟時亮綠燈) |
+| `.key.add-key` + `.create-row`、`.create-target` | 選擇器內「新增分類/新增品項」按鍵(開啟時亮綠燈)、新增位置選擇 |
+| `.crumb.selected`、`.selected-path`、`.selected-tag` | 選擇器中被選取的麵包屑層級、分類「已選擇」路徑標籤、品項「已選擇」標籤(皆為品牌綠) |
 | `.error-banner` | 錯誤訊息框 |
 | `.auth-page` / `.auth-card` / `.auth-body`、`.stack-form`、`.btn.block`、`.auth-switch` | 登入/註冊等單張卡片頁 |
 | `--c-income` / `--c-expense` | 收支圖示與長條顏色 |
@@ -94,3 +95,4 @@
 | 2026-11-06 | E2 帳戶/分類/消費品項/匯入匯出頁改版(`update58.sh`) | `changelog-details/20261106-e2-pages-restyle.md` |
 | 2026-11-06 | E2.5 + E3:選擇器/統計元件/登入頁改用主題、`chartTheme.ts`、移除 `style.css`(`update60.sh`) | `changelog-details/20261106-e25-e3-theme-completion.md` |
 | 2026-11-06 | 新增分類/品項改為醒目按鍵、消費品項頁版面比照分類頁(`update61.sh`) | `changelog-details/20261106-add-keys-tags-page.md` |
+| 2026-11-06 | 分類/品項選取顯示一致化(`update63.sh`) | `changelog-details/20261106-picker-selection-consistency.md` |

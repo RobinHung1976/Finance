@@ -22,7 +22,7 @@
 
 | 元件 | 說明 |
 |---|---|
-| `TagPicker.vue` | 交易表單消費品項多選器。分「最近使用」(依 `last_used_date`,取前 8)/「全部品項」兩區,搜尋時收斂為單一清單;「新增品項」為下方獨立一列的立體按鍵,開啟後在右側輸入,搜尋中開啟會帶入搜尋字 |
+| `TagPicker.vue` | 交易表單消費品項多選器。分「最近使用」(依 `last_used_date`,取前 8)/「全部品項」兩區,搜尋時收斂為單一清單;「新增品項」為下方獨立一列的立體按鍵,開啟後在右側輸入,搜尋中開啟會帶入搜尋字;下方「已選擇」綠色標籤列(點一下取消,搜尋篩掉時也看得到),管理頁以 `hideSelectedHint` 隱藏 |
 | `TagList.vue` | 消費品項管理頁(`/tags`),版面比照分類頁:上方「建立消費品項」直接使用 `TagPicker` 瀏覽/搜尋/新增;下方「全部消費品項」搜尋框 + 表格(品項/使用次數/最後使用/改名、刪除,依使用次數多→少,未使用者淡色);改名同名阻擋;刪除確認文字依 `usage_count` 是否為 0 顯示不同訊息 |
 | `CategoryFilterPicker.vue` | 篩選列專用分類選擇器,按鈕觸發 + 搜尋 + 下拉結果清單,取代原生 `<select>`(因分類已 80+ 項) |
 | `TransactionFormDialog.vue` / `TransactionList.vue` | 新增/編輯對話框掛 `TagPicker`;交易明細表格「消費品項」欄以 chip 顯示 |
@@ -46,3 +46,4 @@
 | 2026-07-08 | 統計圖表加入消費品項排行 | `changelog-details/20260708-tag-breakdown-stats.md` |
 | 2026-11-06 | 管理頁改用金屬主題(標題列新增欄、膠囊鍵、明細列) | `changelog-details/20261106-e2-pages-restyle.md` |
 | 2026-11-06 | 管理頁版面改為比照分類頁(上方 TagPicker 建立、下方表格);「新增品項」改醒目按鍵 | `changelog-details/20261106-add-keys-tags-page.md` |
+| 2026-11-06 | TagPicker 新增「已選擇」標籤列 | `changelog-details/20261106-picker-selection-consistency.md` |

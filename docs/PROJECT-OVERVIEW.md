@@ -117,6 +117,7 @@
 | `20261106-e2-pages-restyle.md` |
 | `20261106-e25-e3-theme-completion.md` |
 | `20261106-add-keys-tags-page.md` |
+| `20261106-picker-selection-consistency.md` |
 
 ### Archive(已整併原始檔,保留回溯)
 

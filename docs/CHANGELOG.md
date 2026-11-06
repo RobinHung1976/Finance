@@ -4,6 +4,7 @@
 
 ## 2026-11
 
+- 11-06 fix: 分類選取顯示不一致(點沒有子分類的分類會跳進空層級);品項加「已選擇」標籤列;可在大類底下新增第一個細項 → [詳情](changelog-details/20261106-picker-selection-consistency.md)
 - 11-06 feat: 新增分類/品項改為醒目按鍵,消費品項頁版面比照分類頁 → [詳情](changelog-details/20261106-add-keys-tags-page.md)
 - 11-06 feat: 選擇器/統計元件/登入頁改用金屬主題,圖表配色統一(`chartTheme.ts`),移除 `style.css` 相容層(E2.5 + E3) → [詳情](changelog-details/20261106-e25-e3-theme-completion.md)
 - 11-06 feat/fix: 帳戶/分類/消費品項/匯入匯出頁改用金屬主題(表格、LED 按鍵、統計卡片),E2 五頁完成;修正匯入完成後無法重選同一檔案、載入帳戶失敗無提示 → [詳情](changelog-details/20261106-e2-pages-restyle.md)
