@@ -114,6 +114,7 @@
 | `20261104-restore-drill-fix.md` |
 | `20261106-ui-metal-theme-layout.md` |
 | `20261106-transactions-report-view.md` |
+| `20261106-e2-pages-restyle.md` |
 
 ### Archive(已整併原始檔,保留回溯)
 
@@ -159,7 +160,8 @@
 **前端改版(E,見 `features/feature-ui-theme.md`)**
 - [x] E0 Dashboard 分頁改子路由 + 側欄版面 `AppLayout`(2026-11-06)
 - [x] E1 金屬主題 `theme.css` + `style.css` 相容層(2026-11-06)
-- [ ] E2 逐頁清除 inline style/寫死色碼,完成後移除相容層(交易紀錄 ✅ 2026-11-06 → 帳戶 → 分類 → 消費品項 → 匯入匯出)
+- [x] E2 五個功能頁改用 `theme.css` class(交易紀錄、帳戶、分類、消費品項、匯入匯出,2026-11-06)
+- [ ] E2.5 共用選擇器(`CategoryPicker`/`TagPicker`/篩選器)、`TagBreakdownChart`/`TopTransactionsList`、登入類頁面改版,完成後移除 `style.css` 相容層
 - [ ] E3 圖表配色統一(`utils/chartTheme.ts`)
 - [~] 手機版——**擱置**(2026-11-06 決定先取消,如重啟需做抽屜選單或底部導覽列)
 

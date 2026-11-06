@@ -57,6 +57,7 @@
 | `.toolbar`、`.grid th.sortable` | 表格上方工具列、可點擊排序表頭 |
 | `dialog.modal` + `.modal-foot` | 原生 `<dialog>` 對話框(`showModal()`) |
 | `.hint` / `.empty` / `.row` / `.notice` / `.flash` | 輔助樣式 |
+| 全域 `input[type=file]` | 檔案選擇按鈕為金屬按鍵外觀 |
 | 全域 `input` / `select` / `textarea` | 內凹金屬輸入框(元件 scoped style 仍可覆寫) |
 
 ## 四、日期工具
@@ -69,13 +70,14 @@
 |---|---|---|
 | 第 0 步 | Dashboard 分頁改子路由 + `AppLayout` | ✅ 2026-11-06 |
 | 第 1 步 | `theme.css` + 相容層 + 品牌列 + 統計頁/成員管理/操作紀錄套用新樣式 | ✅ 2026-11-06 |
-| 第 2 步 | 逐頁清除 inline style 與寫死色碼,改用 `theme.css` class(交易紀錄 → 帳戶 → 分類 → 消費品項 → 匯入匯出);全部改完後移除 `style.css` 相容層 | 進行中:交易紀錄 ✅ 2026-11-06(查詢面板 + 報表表格,見 `feature-transactions.md`) |
+| 第 2 步 | 逐頁清除 inline style 與寫死色碼,改用 `theme.css` class(交易紀錄 → 帳戶 → 分類 → 消費品項 → 匯入匯出);全部改完後移除 `style.css` 相容層 | ✅ 2026-11-06(交易紀錄見 `feature-transactions.md`;其餘四頁見 `changelog-details/20261106-e2-pages-restyle.md`)。相容層尚未移除,見第 2.5 步 |
+| 第 2.5 步 | 共用選擇器(`CategoryPicker`/`TagPicker`/`AccountFilterPicker`/`CategoryFilterPicker`/`TagFilterPicker`)、`TagBreakdownChart`/`TopTransactionsList`、登入類頁面、`MembersView` 的 `.field` 改用 `theme.css`,完成後移除 `style.css` | 未開始 |
 | 第 3 步 | 圖表配色統一(抽 `utils/chartTheme.ts`,三張圖表共用收入/支出色與分類色盤) | 未開始 |
 
 ## 六、已知限制 / 後續可考慮
 
 1. 手機版未做(2026-11-06 決定先取消):窄螢幕時側欄整塊疊在內容上方,需捲動才看到內容;如重啟,需另做抽屜選單或底部導覽列,並關掉 `body` 的 `background-attachment: fixed`(iOS Safari 不支援且捲動易卡頓)
-2. 第 2 步完成前,帳戶/分類/消費品項/匯入匯出頁面內部仍是舊樣式(白色卡片 + inline style),外框已是金屬面板
+2. 共用選擇器(交易對話框內的分類/品項選擇、交易查詢的進階篩選)仍是舊樣式(白底按鈕網格),見第 2.5 步
 3. `AppLayout` 與 `MembersView` 各自呼叫一次 `fetchMyHousehold()`;在成員管理頁改帳本名稱後,側欄名稱要重新整理才更新
 
 ## 七、沿革
@@ -84,3 +86,4 @@
 |---|---|---|
 | 2026-11-06 | 金屬主題 + 側欄版面上線,Dashboard 分頁改子路由(`update54.sh`) | `changelog-details/20261106-ui-metal-theme-layout.md` |
 | 2026-11-06 | E2 交易紀錄頁改版,`theme.css` 新增表單格線/統計卡片/對話框等 class(`update56.sh`) | `changelog-details/20261106-transactions-report-view.md` |
+| 2026-11-06 | E2 帳戶/分類/消費品項/匯入匯出頁改版(`update58.sh`) | `changelog-details/20261106-e2-pages-restyle.md` |

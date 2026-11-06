@@ -27,7 +27,7 @@
 
 | 檔案 | 說明 |
 |---|---|
-| `src/components/ExcelImportExport.vue` | 帳戶選擇、檔案上傳、預覽表格(重複/新分類標記、勾選強制匯入)、匯出年份選擇 |
+| `src/components/ExcelImportExport.vue` | 頁面 `/transfer`,分「匯出 Excel」(年份選擇)與「匯入 Excel」兩個面板。匯入:目標帳戶、檔案上傳、預覽(統計卡片 總筆數/有效/重複/錯誤/將匯入 + 表格,狀態標籤 匯入/新分類/重複跳過/強制匯入,勾選強制匯入);匯入完成或取消後清空檔案欄位(否則重選同一檔案不觸發 `change`) |
 | `src/api/importExport.ts` | `previewImport`/`commitImport` 呼叫時顯式帶 `headers: { 'Content-Type': undefined }`,清除 `apiClient` 全域固定的 `application/json`,讓 axios 依 `FormData` 自動產生正確 boundary |
 
 匯出下載檔名:`{年份}-{帳本名稱}.xlsx`,採 RFC 5987 格式(`Content-Disposition` 同時提供 ASCII 備援與 UTF-8 編碼檔名);前端解析 `response.headers['content-disposition']` 取得實際檔名(優先 `filename*=UTF-8''...`,取不到才退回 `filename="..."`)。
@@ -46,3 +46,4 @@
 |---|---|---|
 | 2026-07-07 | 匯入/匯出功能初版上線 | `changelog-details/20260707-excel-import-export-launch.md` |
 | 2026-07-08 | 修復帳戶餘額未同步、格式過於死板、中文檔名 500、下載檔名前端寫死 | `changelog-details/20260708-excel-import-export-fix.md` |
+| 2026-11-06 | 改用金屬主題(預覽統計卡片 + 表格);修正匯入後無法重選同一檔案、載入帳戶失敗無提示 | `changelog-details/20261106-e2-pages-restyle.md` |

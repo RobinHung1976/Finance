@@ -11,7 +11,7 @@
 
 ## 三、前端
 
-`src/components/AccountList.vue`:帳戶管理頁。`src/components/AccountFilterPicker.vue`:交易篩選用帳戶單選器(搜尋框 + 攤開按鈕網格,取代原生 `<select>`)。
+`src/components/AccountList.vue`:帳戶管理頁(`/accounts`)。表格列出名稱(預設支出帳戶加標籤)/類型/餘額/操作,最下方合計列,負餘額紅色;「調整餘額」在餘額欄就地編輯;操作含設為預設、調整餘額、刪除。新增帳戶表單:名稱、類型、起始餘額(必填,可為 0 或負數)、是否為預設支出帳戶。`src/components/AccountFilterPicker.vue`:交易篩選用帳戶單選器(搜尋框 + 攤開按鈕網格,取代原生 `<select>`)。
 
 ## 四、已知限制 / 後續可考慮
 
@@ -24,3 +24,4 @@
 |---|---|---|
 | 2026-07-08 | Excel 匯入未同步更新帳戶餘額,修正後對之後匯入生效 | `changelog-details/20260708-excel-import-export-fix.md` |
 | 2026-07-08 | 歷史帳戶餘額回補腳本,回補修正前已匯入的落差資料 | `changelog-details/20260708-account-balance-recalc.md` |
+| 2026-11-06 | 帳戶頁改為表格 + 合計列(前端改版 E2) | `changelog-details/20261106-e2-pages-restyle.md` |

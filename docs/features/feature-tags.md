@@ -23,9 +23,9 @@
 | 元件 | 說明 |
 |---|---|
 | `TagPicker.vue` | 交易表單消費品項多選器。分「最近使用」(依 `last_used_date`,取前 8)/「全部品項」兩區,搜尋時收斂為單一清單;支援就地新增 |
-| `TagList.vue` | 消費品項管理頁。搜尋框 + chip 網格版面(取代逐行排列);分「最近使用」(取前 12)/「全部品項」兩區;點擊 chip 開單一詳情面板(使用次數、最後使用日期、改名/刪除);刪除確認文字依 `usage_count` 是否為 0 顯示不同訊息 |
+| `TagList.vue` | 消費品項管理頁(`/tags`)。新增欄在面板標題列;搜尋框 + 金屬膠囊鍵網格(顯示使用次數,未使用者淡色);分「最近使用」(取前 12)/「全部品項」兩區;點擊品項在面板下方開明細列(使用次數、最後使用日期、改名/刪除/關閉);刪除確認文字依 `usage_count` 是否為 0 顯示不同訊息 |
 | `CategoryFilterPicker.vue` | 篩選列專用分類選擇器,按鈕觸發 + 搜尋 + 下拉結果清單,取代原生 `<select>`(因分類已 80+ 項) |
-| `TransactionList.vue` | 新增/編輯表單掛 `TagPicker`;交易卡片消費品項改為獨立彩色 chip 顯示,與帳戶/備註分行 |
+| `TransactionFormDialog.vue` / `TransactionList.vue` | 新增/編輯對話框掛 `TagPicker`;交易明細表格「消費品項」欄以 chip 顯示 |
 
 ## 四、統計串接
 
@@ -44,3 +44,4 @@
 | 2026-07-07 | 初版上線;分類樹第三層店家節點遷移為消費品項(`migrate_leaf_categories_to_tags.py`) | `changelog-details/20260707-tag-feature-launch.md` |
 | 2026-07-08 | UX 改善:搜尋、使用統計、最近使用分區、chip 版面 | `changelog-details/20260708-tag-ux-improvement.md` |
 | 2026-07-08 | 統計圖表加入消費品項排行 | `changelog-details/20260708-tag-breakdown-stats.md` |
+| 2026-11-06 | 管理頁改用金屬主題(標題列新增欄、膠囊鍵、明細列) | `changelog-details/20261106-e2-pages-restyle.md` |
