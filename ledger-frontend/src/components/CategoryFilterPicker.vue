@@ -37,9 +37,10 @@ function fullPathLabel(category: CategoryOut): string {
   return ancestorChain(category).map((c) => c.name).join(' › ')
 }
 
+// 有子分類才進入下一層;沒有子分類只選取、停在原層
 function selectCategory(category: CategoryOut) {
   emit('update:modelValue', category.id)
-  path.value.push(category)
+  if (hasChildren(category.id)) path.value.push(category)
 }
 
 function jumpToBreadcrumb(index: number) {
@@ -103,7 +104,7 @@ function selectFromSearch(category: CategoryOut) {
           <button
             type="button"
             class="crumb"
-            :class="{ active: idx === path.length - 1 }"
+            :class="{ active: idx === path.length - 1, selected: node.id === modelValue }"
             @click="jumpToBreadcrumb(idx)"
           >
             {{ node.name }}

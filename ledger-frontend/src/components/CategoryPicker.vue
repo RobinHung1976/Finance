@@ -55,9 +55,10 @@ function fullPathLabel(category: CategoryOut): string {
   return ancestorChain(category).map((c) => c.name).join(' › ')
 }
 
+// 有子分類才進入下一層;沒有子分類只選取、停在原層,選取狀態直接顯示在按鍵上
 function selectCategory(category: CategoryOut) {
   emit('update:modelValue', category.id)
-  path.value.push(category)
+  if (hasChildren(category.id)) path.value.push(category)
 }
 
 function jumpToBreadcrumb(index: number) {
@@ -91,10 +92,24 @@ function selectFromSearch(category: CategoryOut) {
 const showCreateForm = ref(false)
 const currentLevelLabel = computed(() => (path.value.length ? path.value[path.value.length - 1].name : '最上層'))
 
+// 最上層中被選取、且還沒有子分類的大類:新增時可選擇加在它底下(建立第一個細項)
+// 只限最上層:分類樹維持兩層(大類 > 細項),第三層請改用消費品項
+const selectedLeafHere = computed(() =>
+  path.value.length === 0
+    ? (currentLevelCategories.value.find((c) => c.id === props.modelValue && !hasChildren(c.id)) ?? null)
+    : null
+)
+const createUnderSelected = ref(false)
+const createParent = computed<CategoryOut | null>(() =>
+  createUnderSelected.value && selectedLeafHere.value ? selectedLeafHere.value : path.value[path.value.length - 1] ?? null
+)
+const createTargetLabel = computed(() => createParent.value?.name ?? '最上層')
+
 // 開啟新增欄位時,若正在搜尋且沒有完全同名的分類,直接帶入搜尋字
 function toggleCreateForm() {
   showCreateForm.value = !showCreateForm.value
   createError.value = ''
+  createUnderSelected.value = false
   const q = searchQuery.value.trim()
   if (showCreateForm.value && q && !newCategoryName.value) newCategoryName.value = q
 }
@@ -109,8 +124,10 @@ async function handleCreate() {
     createError.value = '請輸入分類名稱'
     return
   }
-  const isDuplicate = currentLevelCategories.value.some(
-    (c) => c.name.trim().toLowerCase() === trimmedName.toLowerCase()
+  const parent = createParent.value
+  const parentId = parent?.id ?? null
+  const isDuplicate = props.categories.some(
+    (c) => c.type === props.type && c.parent_id === parentId && c.name.trim().toLowerCase() === trimmedName.toLowerCase()
   )
   if (isDuplicate) {
     createError.value = '此層級已有同名分類,請直接選擇現有分類'
@@ -121,11 +138,13 @@ async function handleCreate() {
     const created = await createCategory({
       name: trimmedName,
       type: props.type,
-      parent_id: currentParentId.value,
+      parent_id: parentId,
     })
     emit('created', created)
     emit('update:modelValue', created.id)
-    path.value.push(created)
+    // 新分類沒有子分類,不進入;若是加在選取的分類底下,則進入該分類讓新分類顯示在按鍵列
+    if (parent && path.value[path.value.length - 1]?.id !== parent.id) path.value.push(parent)
+    createUnderSelected.value = false
     newCategoryName.value = ''
     showCreateForm.value = false
   } catch (err) {
@@ -136,9 +155,10 @@ async function handleCreate() {
   }
 }
 
-const selectedCategoryName = computed(
-  () => props.categories.find((c) => c.id === props.modelValue)?.name ?? ''
-)
+const selectedCategoryPath = computed(() => {
+  const selected = props.categories.find((c) => c.id === props.modelValue)
+  return selected ? fullPathLabel(selected) : ''
+})
 </script>
 
 <template>
@@ -176,7 +196,7 @@ const selectedCategoryName = computed(
           <button
             type="button"
             class="crumb"
-            :class="{ active: idx === path.length - 1 }"
+            :class="{ active: idx === path.length - 1, selected: node.id === modelValue }"
             @click="jumpToBreadcrumb(idx)"
           >
             {{ node.name }}
@@ -210,13 +230,21 @@ const selectedCategoryName = computed(
       >
         <AppIcon name="plus" />新增分類
       </button>
-      <span v-if="!showCreateForm" class="create-where">加在「{{ currentLevelLabel }}」</span>
-      <form v-else class="create-form" @submit.prevent="handleCreate">
+      <span v-if="selectedLeafHere" class="create-target" role="group" aria-label="新增位置">
+        <button type="button" class="btn sm" :class="{ on: !createUnderSelected }" :aria-pressed="!createUnderSelected" @click="createUnderSelected = false">
+          加在「{{ currentLevelLabel }}」
+        </button>
+        <button type="button" class="btn sm" :class="{ on: createUnderSelected }" :aria-pressed="createUnderSelected" @click="createUnderSelected = true">
+          加在「{{ selectedLeafHere.name }}」底下
+        </button>
+      </span>
+      <span v-else-if="!showCreateForm" class="create-where">加在「{{ currentLevelLabel }}」</span>
+      <form v-if="showCreateForm" class="create-form" @submit.prevent="handleCreate">
         <input
           v-model="newCategoryName"
           type="text"
           maxlength="100"
-          :placeholder="`在「${currentLevelLabel}」新增分類`"
+          :placeholder="`在「${createTargetLabel}」新增分類`"
           aria-label="新分類名稱"
           required
         />
@@ -228,7 +256,7 @@ const selectedCategoryName = computed(
     <div v-if="createError" class="error-banner">{{ createError }}</div>
 
     <template v-if="!hideSelectedHint">
-      <p v-if="modelValue" class="selected-hint">已選擇：{{ selectedCategoryName }}</p>
+      <p v-if="modelValue" class="selected-hint">已選擇 <span class="selected-path">{{ selectedCategoryPath }}</span></p>
       <p v-else class="selected-hint missing">尚未選擇分類</p>
     </template>
   </div>

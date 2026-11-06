@@ -120,7 +120,7 @@ async function handleDelete(tag: TagOut) {
     <div class="panel-body">
       <div v-if="loadError" class="error-banner">{{ loadError }}</div>
       <p class="hint intro">先搜尋或瀏覽既有品項,沒有的話按「新增品項」。</p>
-      <TagPicker v-model="browsingSelection" :tags="tags" @created="handleTagCreated" />
+      <TagPicker v-model="browsingSelection" :tags="tags" :hide-selected-hint="true" @created="handleTagCreated" />
     </div>
   </section>
 

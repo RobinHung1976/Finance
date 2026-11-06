@@ -11,6 +11,7 @@ const RECENT_LIMIT = 8
 const props = defineProps<{
   modelValue: string[]
   tags: TagOut[]
+  hideSelectedHint?: boolean
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: string[]]
@@ -51,6 +52,11 @@ const otherTags = computed(() => {
   const recentIds = new Set(recentTags.value.map((t) => t.id))
   return props.tags.filter((t) => !recentIds.has(t.id))
 })
+
+// 已選取的品項(依選取順序),顯示在下方,搜尋篩掉時也看得到
+const selectedTags = computed(() =>
+  props.modelValue.map((id) => props.tags.find((t) => t.id === id)).filter((t): t is TagOut => !!t)
+)
 
 function isSelected(id: string) {
   return props.modelValue.includes(id)
@@ -157,5 +163,18 @@ async function handleCreate() {
       </form>
     </div>
     <div v-if="createError" class="error-banner">{{ createError }}</div>
+    <p v-if="!hideSelectedHint && selectedTags.length" class="selected-hint">
+      已選擇
+      <button
+        v-for="t in selectedTags"
+        :key="t.id"
+        type="button"
+        class="selected-tag"
+        :title="`取消選擇「${t.name}」`"
+        @click="toggleTag(t.id)"
+      >
+        {{ t.name }} ×
+      </button>
+    </p>
   </div>
 </template>
