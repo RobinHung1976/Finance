@@ -231,14 +231,14 @@ async function handleAddMember() {
       <div class="panel-body">
         <div v-if="loadError" class="error-banner">{{ loadError }}</div>
 
-        <form v-if="showAddForm" class="add-form" @submit.prevent="handleAddMember">
+        <form v-if="showAddForm" class="add-form stack-form" @submit.prevent="handleAddMember">
           <div v-if="addError" class="error-banner">{{ addError }}</div>
 
-          <div class="field">
+          <div class="form-field">
             <label for="new-name">姓名</label>
             <input id="new-name" v-model="newName" type="text" required maxlength="100" />
           </div>
-          <div class="field">
+          <div class="form-field">
             <label for="new-username">帳號</label>
             <input
               id="new-username"
@@ -249,11 +249,11 @@ async function handleAddMember() {
               placeholder="登入用,例如 mom01"
             />
           </div>
-          <div class="field">
+          <div class="form-field">
             <label for="new-email">Email</label>
             <input id="new-email" v-model="newEmail" type="email" required autocomplete="off" />
           </div>
-          <div class="field">
+          <div class="form-field">
             <label for="new-password">初始密碼</label>
             <input
               id="new-password"
@@ -264,16 +264,18 @@ async function handleAddMember() {
               autocomplete="new-password"
             />
           </div>
-          <div class="field">
+          <div class="form-field">
             <label for="new-role">權限</label>
             <select id="new-role" v-model="newRole">
               <option value="member">使用者</option>
               <option value="admin">管理者</option>
             </select>
           </div>
-          <button class="btn primary" type="submit" :disabled="isAdding">
-            {{ isAdding ? '新增中…' : '確認新增' }}
-          </button>
+          <div>
+            <button class="btn primary" type="submit" :disabled="isAdding">
+              {{ isAdding ? '新增中…' : '確認新增' }}
+            </button>
+          </div>
         </form>
 
         <div v-if="!isLoading" class="table-wrap">

@@ -40,11 +40,11 @@ const maxAmount = computed(() =>
 <template>
   <div class="top-transactions">
     <div class="header-row">
-      <div class="type-toggle">
-        <button :class="{ active: type === 'expense' }" @click="type = 'expense'">支出</button>
-        <button :class="{ active: type === 'income' }" @click="type = 'income'">收入</button>
+      <div class="keypad sm" role="radiogroup" aria-label="收支類型">
+        <button type="button" role="radio" class="key" :class="{ active: type === 'expense' }" :aria-checked="type === 'expense'" @click="type = 'expense'">支出</button>
+        <button type="button" role="radio" class="key" :class="{ active: type === 'income' }" :aria-checked="type === 'income'" @click="type = 'income'">收入</button>
       </div>
-      <select v-model.number="limit" class="limit-select">
+      <select v-model.number="limit" class="limit-select" aria-label="顯示筆數">
         <option :value="5">Top 5</option>
         <option :value="10">Top 10</option>
         <option :value="20">Top 20</option>
@@ -53,9 +53,9 @@ const maxAmount = computed(() =>
 
     <p class="hint">依單筆交易金額排行,不套用進階篩選(帳戶/分類/消費品項)</p>
 
-    <div v-if="loading" class="state-msg">載入中...</div>
-    <div v-else-if="errorMsg" class="state-msg error">{{ errorMsg }}</div>
-    <div v-else-if="items.length === 0" class="state-msg">此區間無交易</div>
+    <div v-if="loading" class="empty">載入中…</div>
+    <div v-else-if="errorMsg" class="error-banner">{{ errorMsg }}</div>
+    <div v-else-if="items.length === 0" class="empty">此區間無交易</div>
 
     <div v-else class="bar-list">
       <div v-for="(item, index) in items" :key="item.id" class="bar-row">
@@ -66,11 +66,11 @@ const maxAmount = computed(() =>
             <span class="account" :title="item.account_name">{{ item.account_name }}</span>
           </div>
           <div class="bar-track">
-            <div class="bar-fill" :style="{ width: `${(item.amount / maxAmount) * 100}%` }" />
+            <div class="bar-fill" :class="type" :style="{ width: `${(item.amount / maxAmount) * 100}%` }" />
           </div>
         </div>
         <div class="right">
-          <span class="amount">{{ formatCurrency(item.amount) }}</span>
+          <span class="amount" :class="type">{{ formatCurrency(item.amount) }}</span>
           <span class="date">{{ item.date }}</span>
         </div>
       </div>
@@ -79,109 +79,32 @@ const maxAmount = computed(() =>
 </template>
 
 <style scoped>
-.top-transactions {
-  height: 320px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-.type-toggle button {
-  padding: 4px 12px;
-  border: 1px solid #ddd;
-  background: #fff;
-  cursor: pointer;
-}
-.type-toggle button.active {
-  background: #333;
-  color: #fff;
-}
-.limit-select {
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 13px;
-}
-.hint {
-  font-size: 12px;
-  color: #888;
-  margin: 4px 0 8px;
-}
-.state-msg {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-}
-.state-msg.error {
-  color: #d33;
-}
-.bar-list {
-  flex: 1;
-  overflow-y: auto;
-}
-.bar-row {
-  display: grid;
-  grid-template-columns: 24px 1fr 110px;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-  border-bottom: 1px solid #f3f4f6;
-}
-.rank {
-  font-size: 13px;
-  font-weight: 600;
-  color: #9ca3af;
-  text-align: center;
-}
-.info-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-.category {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
-}
-.account {
-  color: #888;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
+.top-transactions { height: 360px; display: flex; flex-direction: column; overflow: hidden; }
+.header-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px; }
+.keypad.sm { padding: 0; gap: 8px; }
+.keypad.sm .key { height: 32px; padding: 0 14px 6px; font-size: 13px; }
+.keypad.sm .key::after { left: 10px; right: 10px; bottom: 3px; height: 3px; }
+.hint { margin: 4px 0 10px; }
+.bar-list { flex: 1; overflow-y: auto; padding-right: 4px; }
 .bar-track {
-  height: 10px;
-  background: #f0f0f0;
-  border-radius: 4px;
-  overflow: hidden;
+  height: 12px; overflow: hidden; border-radius: 6px; background: #d9dde2;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 25%), 0 1px 0 rgb(255 255 255 / 70%);
 }
-.bar-fill {
-  height: 100%;
-  background: #4a90d9;
-  transition: width 0.3s ease;
+.bar-fill { height: 100%; border-radius: 6px; transition: width 0.3s ease; box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%); }
+.bar-fill.expense { background: linear-gradient(180deg, #d9603c, var(--c-expense)); }
+.bar-fill.income { background: linear-gradient(180deg, #34a868, var(--c-income)); }
+@media (prefers-reduced-motion: reduce) { .bar-fill { transition: none; } }
+.limit-select { width: 110px; }
+.bar-row { display: grid; grid-template-columns: 28px 1fr 120px; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+.rank {
+  display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 800; color: var(--text-2);
+  background: var(--metal-key); border: 1px solid #a9b0b8; box-shadow: inset 0 1px 0 #fff;
 }
-.right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-.amount {
-  font-size: 13px;
-  font-weight: 600;
-}
-.date {
-  font-size: 11px;
-  color: #999;
-}
+.info { min-width: 0; }
+.info-top { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 5px; font-size: 13.5px; }
+.category { overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.account { flex-shrink: 0; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+.right { display: flex; flex-direction: column; align-items: flex-end; }
+.amount { font-size: 14px; }
+.date { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 </style>

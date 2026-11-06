@@ -56,21 +56,22 @@ async function handleSubmit() {
   <div class="auth-page">
     <div class="auth-card">
       <BrandBlock />
+      <div class="auth-body">
       <h1>建立家庭帳本</h1>
       <p class="subtitle">你將成為第一位管理者</p>
 
       <div v-if="errorMessage" class="error-banner">{{ errorMessage }}</div>
 
-      <form @submit.prevent="handleSubmit">
-        <div class="field">
+      <form class="stack-form" @submit.prevent="handleSubmit">
+        <div class="form-field">
           <label for="household-name">家庭帳本名稱</label>
           <input id="household-name" v-model="householdName" type="text" required maxlength="100" />
         </div>
-        <div class="field">
+        <div class="form-field">
           <label for="admin-name">你的姓名</label>
           <input id="admin-name" v-model="adminName" type="text" required maxlength="100" />
         </div>
-        <div class="field">
+        <div class="form-field">
           <label for="admin-username">帳號</label>
           <input
             id="admin-username"
@@ -81,7 +82,7 @@ async function handleSubmit() {
             placeholder="登入用,例如 dad01"
           />
         </div>
-        <div class="field">
+        <div class="form-field">
           <label for="admin-email">Email</label>
           <input
             id="admin-email"
@@ -92,7 +93,7 @@ async function handleSubmit() {
             placeholder="可與家人共用,忘記密碼時使用"
           />
         </div>
-        <div class="field">
+        <div class="form-field">
           <label for="admin-password">密碼</label>
           <input
             id="admin-password"
@@ -103,7 +104,7 @@ async function handleSubmit() {
             autocomplete="new-password"
           />
         </div>
-        <button class="btn-primary" type="submit" :disabled="isSubmitting">
+        <button class="btn primary block" type="submit" :disabled="isSubmitting">
           {{ isSubmitting ? '建立中…' : '建立帳本' }}
         </button>
       </form>
@@ -111,6 +112,7 @@ async function handleSubmit() {
       <p class="auth-switch">
         已經有帳本了？<router-link to="/login">登入</router-link>
       </p>
+      </div>
     </div>
   </div>
 </template>

@@ -39,9 +39,9 @@ const maxAmount = computed(() =>
 <template>
   <div class="tag-breakdown">
     <div class="header-row">
-      <div class="type-toggle">
-        <button :class="{ active: type === 'expense' }" @click="type = 'expense'">支出</button>
-        <button :class="{ active: type === 'income' }" @click="type = 'income'">收入</button>
+      <div class="keypad sm" role="radiogroup" aria-label="收支類型">
+        <button type="button" role="radio" class="key" :class="{ active: type === 'expense' }" :aria-checked="type === 'expense'" @click="type = 'expense'">支出</button>
+        <button type="button" role="radio" class="key" :class="{ active: type === 'income' }" :aria-checked="type === 'income'" @click="type = 'income'">收入</button>
       </div>
     </div>
 
@@ -49,17 +49,17 @@ const maxAmount = computed(() =>
       依消費品項排行(單筆交易可能同時掛多個品項,故總和不等於{{ type === 'expense' ? '支出' : '收入' }}總額)
     </p>
 
-    <div v-if="loading" class="state-msg">載入中...</div>
-    <div v-else-if="errorMsg" class="state-msg error">{{ errorMsg }}</div>
-    <div v-else-if="items.length === 0" class="state-msg">此區間無已標記消費品項的交易</div>
+    <div v-if="loading" class="empty">載入中…</div>
+    <div v-else-if="errorMsg" class="error-banner">{{ errorMsg }}</div>
+    <div v-else-if="items.length === 0" class="empty">此區間無已標記消費品項的交易</div>
 
     <div v-else class="bar-list">
       <div v-for="item in items" :key="item.tag_id" class="bar-row">
         <span class="label" :title="item.name">{{ item.name }}</span>
         <div class="bar-track">
-          <div class="bar-fill" :style="{ width: `${(item.total_amount / maxAmount) * 100}%` }" />
+          <div class="bar-fill" :class="type" :style="{ width: `${(item.total_amount / maxAmount) * 100}%` }" />
         </div>
-        <span class="amount">{{ formatCurrency(item.total_amount) }}</span>
+        <span class="amount" :class="type">{{ formatCurrency(item.total_amount) }}</span>
         <span class="count">{{ item.transaction_count }} 筆</span>
       </div>
     </div>
@@ -67,77 +67,23 @@ const maxAmount = computed(() =>
 </template>
 
 <style scoped>
-.tag-breakdown {
-  height: 320px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.header-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 4px;
-}
-.type-toggle button {
-  padding: 4px 12px;
-  border: 1px solid #ddd;
-  background: #fff;
-  cursor: pointer;
-}
-.type-toggle button.active {
-  background: #333;
-  color: #fff;
-}
-.hint {
-  font-size: 12px;
-  color: #888;
-  margin: 4px 0 8px;
-}
-.state-msg {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #999;
-}
-.state-msg.error {
-  color: #d33;
-}
-.bar-list {
-  flex: 1;
-  overflow-y: auto;
-}
-.bar-row {
-  display: grid;
-  grid-template-columns: 90px 1fr 90px 50px;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 0;
-}
-.label {
-  font-size: 13px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+.tag-breakdown { height: 360px; display: flex; flex-direction: column; overflow: hidden; }
+.header-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 6px; }
+.keypad.sm { padding: 0; gap: 8px; }
+.keypad.sm .key { height: 32px; padding: 0 14px 6px; font-size: 13px; }
+.keypad.sm .key::after { left: 10px; right: 10px; bottom: 3px; height: 3px; }
+.hint { margin: 4px 0 10px; }
+.bar-list { flex: 1; overflow-y: auto; padding-right: 4px; }
 .bar-track {
-  height: 14px;
-  background: #f0f0f0;
-  border-radius: 4px;
-  overflow: hidden;
+  height: 12px; overflow: hidden; border-radius: 6px; background: #d9dde2;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 25%), 0 1px 0 rgb(255 255 255 / 70%);
 }
-.bar-fill {
-  height: 100%;
-  background: #4a90d9;
-  transition: width 0.3s ease;
-}
-.amount {
-  font-size: 13px;
-  text-align: right;
-}
-.count {
-  font-size: 12px;
-  color: #999;
-  text-align: right;
-}
+.bar-fill { height: 100%; border-radius: 6px; transition: width 0.3s ease; box-shadow: inset 0 1px 0 rgb(255 255 255 / 35%); }
+.bar-fill.expense { background: linear-gradient(180deg, #d9603c, var(--c-expense)); }
+.bar-fill.income { background: linear-gradient(180deg, #34a868, var(--c-income)); }
+@media (prefers-reduced-motion: reduce) { .bar-fill { transition: none; } }
+.bar-row { display: grid; grid-template-columns: 110px 1fr 110px 56px; align-items: center; gap: 10px; padding: 5px 0; }
+.label { overflow: hidden; font-size: 13.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.amount { font-size: 13.5px; text-align: right; }
+.count { font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
 </style>

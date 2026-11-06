@@ -75,7 +75,7 @@ function selectFromSearch(category: CategoryOut) {
 
 <template>
   <div class="filter-picker-box">
-    <input v-model="searchQuery" type="text" class="search-input" placeholder="搜尋分類(不限層級)…" />
+    <input v-model="searchQuery" type="search" class="search-input" placeholder="搜尋分類(不限層級)…" />
 
     <template v-if="searchQuery.trim()">
       <div v-if="searchResults.length" class="search-results">
@@ -130,95 +130,3 @@ function selectFromSearch(category: CategoryOut) {
     </template>
   </div>
 </template>
-
-<style scoped>
-.filter-picker-box {
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 10px;
-  background: var(--color-bg);
-}
-.search-input {
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 13px;
-  margin-bottom: 8px;
-  box-sizing: border-box;
-}
-.search-results {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 240px;
-  overflow-y: auto;
-}
-.search-result-btn {
-  text-align: left;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
-}
-.search-result-btn.selected {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-.breadcrumb {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-.crumb {
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #6b7a74;
-  padding: 2px 4px;
-  cursor: pointer;
-}
-.crumb.active {
-  color: var(--color-primary);
-  font-weight: 600;
-}
-.crumb-sep {
-  color: #b7c2bd;
-  font-size: 12px;
-}
-.option-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.option-btn {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 13px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.option-btn.selected {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-.chevron {
-  color: #9fb3ac;
-  font-size: 11px;
-}
-.no-result {
-  font-size: 12px;
-  color: #6b7a74;
-  margin: 0;
-}
-</style>

@@ -26,18 +26,19 @@ async function handleSubmit() {
   <div class="auth-page">
     <div class="auth-card">
       <BrandBlock />
+      <div class="auth-body">
       <template v-if="!isSubmitted">
         <h1>忘記密碼</h1>
         <p class="subtitle">輸入註冊時填寫的 email，我們會寄送重設連結</p>
 
         <div v-if="errorMessage" class="error-banner">{{ errorMessage }}</div>
 
-        <form @submit.prevent="handleSubmit">
-          <div class="field">
+        <form class="stack-form" @submit.prevent="handleSubmit">
+          <div class="form-field">
             <label for="email">Email</label>
             <input id="email" v-model="email" type="email" required autocomplete="email" />
           </div>
-          <button class="btn-primary" type="submit" :disabled="isSubmitting">
+          <button class="btn primary block" type="submit" :disabled="isSubmitting">
             {{ isSubmitting ? '發送中…' : '發送重設信件' }}
           </button>
         </form>
@@ -53,6 +54,7 @@ async function handleSubmit() {
       <p class="auth-switch">
         <router-link to="/login">返回登入</router-link>
       </p>
+      </div>
     </div>
   </div>
 </template>

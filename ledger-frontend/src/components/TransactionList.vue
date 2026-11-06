@@ -436,8 +436,8 @@ function exportCsv() {
 
 <style scoped>
 .keypad { padding: 0; }
-.ic-expense { color: #b8391a; }
-.ic-income { color: #1f8a4c; }
+.ic-expense { color: var(--c-expense); }
+.ic-income { color: var(--c-income); }
 .row.nowrap { flex-wrap: nowrap; }
 .row.nowrap input { min-width: 0; flex: 1; }
 .sep { color: var(--muted); font-weight: 700; }

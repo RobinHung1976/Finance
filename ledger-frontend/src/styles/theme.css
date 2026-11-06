@@ -52,6 +52,8 @@
   --bad: #b42318;
   --bad-soft: #f9e5e3;
   --bad-line: #e6aaa4;
+  --c-income: #1f8a4c;   /* 收入圖示/圖表色 */
+  --c-expense: #b8391a;  /* 支出圖示/圖表色 */
 
   --radius: 10px;
   --radius-sm: 6px;
@@ -345,6 +347,69 @@ dialog.modal {
 dialog.modal::backdrop { background: rgb(20 24 30 / 45%); backdrop-filter: blur(1px); }
 dialog.modal .panel-head { position: sticky; top: 0; z-index: 1; background: linear-gradient(180deg, #fbfbfc, #eceef1); }
 .modal-foot { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--line-soft); }
+
+/* ---------- 選擇器（CategoryPicker / TagPicker / 三個篩選器共用） ---------- */
+.category-picker, .tag-picker, .filter-picker-box {
+  padding: 10px 12px 12px; border: 1px solid var(--line); border-radius: 8px;
+  background: rgb(255 255 255 / 50%); box-shadow: inset 0 1px 2px rgb(0 0 0 / 8%);
+}
+:is(.category-picker, .tag-picker, .filter-picker-box) .search-input { width: 100%; min-height: 32px; font-size: 13px; margin-bottom: 8px; }
+:is(.category-picker, .tag-picker, .filter-picker-box) .breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin-bottom: 8px; }
+:is(.category-picker, .tag-picker, .filter-picker-box) .crumb {
+  padding: 1px 6px; font: inherit; font-size: 12.5px; color: var(--muted); background: none; border: 0; border-radius: 4px; cursor: pointer;
+}
+:is(.category-picker, .tag-picker, .filter-picker-box) .crumb:hover { color: var(--text); background: rgb(0 0 0 / 5%); }
+:is(.category-picker, .tag-picker, .filter-picker-box) .crumb.active { color: var(--accent); font-weight: 700; }
+:is(.category-picker, .tag-picker, .filter-picker-box) .crumb-sep { color: var(--field-line); font-size: 12px; }
+:is(.category-picker, .tag-picker, .filter-picker-box) :is(.option-grid, .tag-grid) { display: flex; flex-wrap: wrap; gap: 6px; }
+.filter-picker-box .option-grid { max-height: 240px; overflow-y: auto; padding: 1px; }
+:is(.category-picker, .tag-picker, .filter-picker-box) .tag-section-label { margin: 10px 0 5px; font-size: 12px; font-weight: 700; color: var(--muted); }
+:is(.category-picker, .tag-picker, .filter-picker-box) :is(.option-btn, .tag-btn, .search-result-btn) {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 30px; padding: 0 12px;
+  font: inherit; font-size: 13px; font-weight: 600; color: #22272e; text-shadow: 0 1px 0 #fff; cursor: pointer;
+  border: 1px solid #a9b0b8; border-radius: var(--radius-sm); background: var(--metal-key);
+  box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgb(0 0 0 / 15%);
+}
+:is(.category-picker, .tag-picker, .filter-picker-box) :is(.option-btn, .tag-btn, .search-result-btn):hover { background: var(--metal-key-hover); }
+:is(.tag-picker .tag-btn, .filter-picker-box.tags .option-btn) { border-radius: 999px; }
+:is(.category-picker, .tag-picker, .filter-picker-box) :is(.option-btn, .tag-btn, .search-result-btn).selected {
+  color: #fff; text-shadow: 0 -1px 0 rgb(0 0 0 / 35%); border-color: var(--brand-edge); background: var(--brand-metal-lit);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 45%), 0 0 6px var(--brand-glow);
+}
+:is(.category-picker, .tag-picker, .filter-picker-box) .search-results { display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow-y: auto; padding: 1px; }
+:is(.category-picker, .tag-picker, .filter-picker-box) .search-result-btn { justify-content: flex-start; text-align: left; }
+:is(.category-picker, .tag-picker, .filter-picker-box) .chevron { color: var(--muted); font-size: 12px; }
+:is(.category-picker, .tag-picker, .filter-picker-box) .selected .chevron { color: rgb(255 255 255 / 80%); }
+:is(.category-picker, .tag-picker) .add-btn {
+  color: var(--accent); text-shadow: none; border-style: dashed; border-color: var(--field-line); background: transparent; box-shadow: none;
+}
+:is(.category-picker, .tag-picker) .add-btn:hover { background: rgb(255 255 255 / 70%); }
+:is(.category-picker, .tag-picker) .create-form { display: flex; gap: 8px; margin-top: 10px; }
+:is(.category-picker, .tag-picker) .create-form input { flex: 1; min-width: 0; }
+:is(.category-picker, .tag-picker) .error-banner { margin: 8px 0 0; }
+:is(.category-picker, .tag-picker, .filter-picker-box) :is(.selected-hint, .no-result) { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
+.category-picker .selected-hint.missing { color: var(--bad); }
+
+/* ---------- 錯誤訊息 ---------- */
+.error-banner {
+  margin-bottom: 16px; padding: 10px 12px; font-size: 13px;
+  color: #8e1c1c; background: var(--bad-soft); border: 1px solid var(--bad-line); border-radius: var(--radius-sm);
+}
+
+/* ---------- 登入 / 註冊等單張卡片頁 ---------- */
+.auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.auth-card {
+  width: 100%; max-width: 400px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--brush-light), var(--metal-plate); box-shadow: var(--bevel), 0 18px 50px rgb(30 35 45 / 28%);
+}
+.auth-body { padding: 22px 28px 26px; }
+.auth-body h1 { margin: 0 0 4px; font-size: 20px; text-shadow: 0 1px 0 #fff; }
+.auth-body .subtitle { margin: 0 0 20px; font-size: 13.5px; color: var(--muted); }
+.auth-body h1 + :not(.subtitle) { margin-top: 16px; }
+.stack-form { display: flex; flex-direction: column; gap: 16px; }
+.btn.block { width: 100%; height: 38px; font-size: 14px; }
+.auth-switch { margin: 18px 0 0; text-align: center; font-size: 13px; color: var(--muted); }
+.auth-switch a { font-weight: 700; }
 
 /* ---------- 訊息 ---------- */
 .flash { border-radius: var(--radius); padding: 10px 16px; border: 1px solid var(--ok-line); background: var(--ok-soft); color: #14532d; box-shadow: var(--bevel); }

@@ -135,7 +135,7 @@ const selectedCategoryName = computed(
   <div class="category-picker">
     <input
       v-model="searchQuery"
-      type="text"
+      type="search"
       class="search-input"
       placeholder="搜尋分類(不限層級,例如：晚餐)"
     />
@@ -195,139 +195,15 @@ const selectedCategoryName = computed(
 
     <form v-if="showCreateForm" class="create-form" @submit.prevent="handleCreate">
       <input v-model="newCategoryName" type="text" maxlength="100" placeholder="分類名稱" required />
-      <button class="btn-primary" type="submit" style="width: auto; padding: 6px 14px" :disabled="isCreating">
+      <button class="btn primary sm" type="submit" :disabled="isCreating">
         {{ isCreating ? '新增中…' : '確認' }}
       </button>
     </form>
-    <div v-if="createError" class="error-banner" style="margin-top: 6px">{{ createError }}</div>
+    <div v-if="createError" class="error-banner">{{ createError }}</div>
 
     <template v-if="!hideSelectedHint">
       <p v-if="modelValue" class="selected-hint">已選擇：{{ selectedCategoryName }}</p>
-      <p v-else class="selected-hint" style="color: var(--color-danger)">尚未選擇分類</p>
+      <p v-else class="selected-hint missing">尚未選擇分類</p>
     </template>
   </div>
 </template>
-
-<style scoped>
-.category-picker {
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 10px;
-  background: var(--color-bg);
-}
-
-.search-input {
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 13px;
-  margin-bottom: 8px;
-  box-sizing: border-box;
-}
-
-.search-results {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 240px;
-  overflow-y: auto;
-}
-
-.search-result-btn {
-  text-align: left;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.search-result-btn.selected {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.breadcrumb {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-
-.crumb {
-  background: none;
-  border: none;
-  font-size: 12px;
-  color: #6b7a74;
-  padding: 2px 4px;
-  cursor: pointer;
-}
-
-.crumb.active {
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.crumb-sep {
-  color: #b7c2bd;
-  font-size: 12px;
-}
-
-.option-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.option-btn {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 13px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.option-btn.selected {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
-.chevron {
-  color: #9fb3ac;
-  font-size: 11px;
-}
-
-.add-btn {
-  color: var(--color-primary);
-  border-style: dashed;
-}
-
-.create-form {
-  display: flex;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.create-form input {
-  flex: 1;
-  padding: 6px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 13px;
-}
-
-.selected-hint {
-  font-size: 12px;
-  color: #6b7a74;
-  margin: 8px 0 0;
-}
-</style>

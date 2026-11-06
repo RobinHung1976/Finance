@@ -3,6 +3,7 @@ import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
 import { fetchCategoryBreakdown } from '@/api/ledgerApi'
 import type { CategoryBreakdownOut, EntryType } from '@/types/ledger'
+import { CHART_COLORS, paletteColor } from '@/utils/chartTheme'
 
 const props = withDefaults(defineProps<{ type?: EntryType; startDate: string; endDate: string }>(), {
   type: 'expense',
@@ -14,12 +15,8 @@ const data = ref<CategoryBreakdownOut | null>(null)
 const errorMsg = ref('')
 let chartInstance: Chart | null = null
 
-const PALETTE = [
-  '#4F46E5', '#059669', '#D97706', '#DC2626', '#7C3AED',
-  '#0891B2', '#DB2777', '#65A30D', '#EA580C', '#4338CA',
-]
 // 「本分類直接交易(未再細分)」固定用中性灰,跟一般子分類的彩色區隔開來
-const SELF_COLOR = '#9CA3AF'
+const SELF_COLOR = CHART_COLORS.neutral
 
 function formatCurrency(v: number): string {
   return v.toLocaleString('zh-TW', { style: 'currency', currency: 'TWD', maximumFractionDigits: 0 })
@@ -66,8 +63,9 @@ function renderChart() {
       datasets: [
         {
           data: items.map((i) => i.amount),
-          backgroundColor: items.map((i, idx) => (i.is_self ? SELF_COLOR : PALETTE[idx % PALETTE.length])),
-          borderWidth: 1,
+          backgroundColor: items.map((i, idx) => (i.is_self ? SELF_COLOR : paletteColor(idx))),
+          borderColor: '#f4f5f7',
+          borderWidth: 2,
         },
       ],
     },
@@ -109,48 +107,28 @@ watch(() => [props.type, props.startDate, props.endDate], () => {
 
 <template>
   <div class="category-breakdown">
-    <nav v-if="breadcrumb.length > 0" class="breadcrumb">
-      <button class="crumb" @click="goToLevel(-1)">頂層</button>
+    <nav class="crumbs" aria-label="分類層級">
+      <button type="button" class="btn sm" :class="{ on: breadcrumb.length === 0 }" @click="goToLevel(-1)">頂層</button>
       <template v-for="(crumb, idx) in breadcrumb" :key="crumb.id">
         <span class="sep">›</span>
-        <button class="crumb" :class="{ current: idx === breadcrumb.length - 1 }" @click="goToLevel(idx)">
+        <button type="button" class="btn sm" :class="{ on: idx === breadcrumb.length - 1 }" @click="goToLevel(idx)">
           {{ crumb.name }}
         </button>
       </template>
+      <span class="hint">點圓餅區塊可查看子分類</span>
     </nav>
-    <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+    <div v-if="errorMsg" class="error-banner">{{ errorMsg }}</div>
     <p v-else-if="data && data.items.length === 0" class="empty">此期間無資料</p>
     <div v-else class="chart-wrap"><canvas ref="canvasRef"></canvas></div>
-    <p v-if="data && data.items.length > 0" class="total">總計:{{ formatCurrency(data.total) }}</p>
+    <p v-if="data && data.items.length > 0" class="total">總計 <span class="amount expense">{{ formatCurrency(data.total) }}</span></p>
   </div>
 </template>
 
 <style scoped>
 .category-breakdown { display: flex; flex-direction: column; height: 100%; }
-
-.breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-.crumb {
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  border-radius: 999px;
-  padding: 4px 12px;
-  font-size: 0.8rem;
-  color: #4b5563;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.crumb:hover { background: #e5e7eb; }
-.crumb.current { background: #4F46E5; border-color: #4F46E5; color: #fff; cursor: default; }
-.sep { color: #9ca3af; font-size: 0.8rem; }
-
+.crumbs { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.crumbs .hint { margin-left: 8px; }
+.sep { color: var(--muted); font-weight: 700; }
 .chart-wrap { position: relative; height: 320px; }
-.error { color: #dc2626; }
-.empty { color: #6b7280; text-align: center; padding: 2rem 0; }
-.total { text-align: center; font-weight: 600; margin-top: 0.5rem; }
+.total { margin: 10px 0 0; text-align: center; font-weight: 700; }
 </style>

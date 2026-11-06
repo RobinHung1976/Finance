@@ -203,6 +203,6 @@ defineExpose({ openCreate, openEdit })
 <style scoped>
 .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .keypad { padding: 0; }
-.ic-expense { color: #b8391a; }
-.ic-income { color: #1f8a4c; }
+.ic-expense { color: var(--c-expense); }
+.ic-income { color: var(--c-income); }
 </style>

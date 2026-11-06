@@ -3,6 +3,7 @@ import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
 import Chart from 'chart.js/auto'
 import { fetchMonthlyTrend } from '@/api/ledgerApi'
 import type { MonthlyTrendOut } from '@/types/ledger'
+import { CHART_COLORS, withAlpha } from '@/utils/chartTheme'
 
 const props = defineProps<{ startDate: string; endDate: string }>()
 
@@ -35,16 +36,16 @@ function renderChart() {
         {
           label: '收入',
           data: incomeData,
-          borderColor: '#1f5f4f',
-          backgroundColor: '#1f5f4f22',
+          borderColor: CHART_COLORS.income,
+          backgroundColor: withAlpha(CHART_COLORS.income, 0.12),
           tension: 0.3,
           fill: true,
         },
         {
           label: '支出',
           data: expenseData,
-          borderColor: '#b3432b',
-          backgroundColor: '#b3432b22',
+          borderColor: CHART_COLORS.expense,
+          backgroundColor: withAlpha(CHART_COLORS.expense, 0.12),
           tension: 0.3,
           fill: true,
         },
@@ -92,86 +93,34 @@ onBeforeUnmount(() => chartInstance?.destroy())
 </script>
 
 <template>
-  <div class="trend-card">
-    <div v-if="loading" class="state-msg">載入中…</div>
-    <div v-else-if="error" class="state-msg error">{{ error }}</div>
+  <div class="trend">
+    <div v-if="loading" class="empty">載入中…</div>
+    <div v-else-if="error" class="error-banner">{{ error }}</div>
     <template v-else-if="data">
-      <div class="summary-row">
-        <div class="summary-item">
-          <span class="label">總收入</span>
-          <span class="value income">{{ formatCurrency(data.total_income) }}</span>
+      <div class="stat-grid">
+        <div class="stat">
+          <div class="stat-label">總收入</div>
+          <div class="stat-value income">{{ formatCurrency(data.total_income) }}</div>
         </div>
-        <div class="summary-item">
-          <span class="label">總支出</span>
-          <span class="value expense">{{ formatCurrency(data.total_expense) }}</span>
+        <div class="stat">
+          <div class="stat-label">總支出</div>
+          <div class="stat-value expense">{{ formatCurrency(data.total_expense) }}</div>
         </div>
-        <div class="summary-item">
-          <span class="label">結餘</span>
-          <span class="value" :class="data.total_balance >= 0 ? 'income' : 'expense'">
+        <div class="stat">
+          <div class="stat-label">結餘</div>
+          <div class="stat-value" :class="data.total_balance >= 0 ? 'income' : 'expense'">
             {{ formatCurrency(data.total_balance) }}
-          </span>
+          </div>
         </div>
       </div>
-      <div class="chart-wrap">
-        <canvas ref="canvasRef"></canvas>
+      <div class="chart-box">
+        <div class="chart-wrap"><canvas ref="canvasRef"></canvas></div>
       </div>
     </template>
   </div>
 </template>
 
 <style scoped>
-.trend-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: 20px;
-}
-
-.state-msg {
-  text-align: center;
-  padding: 40px 0;
-  color: #6b7a74;
-}
-
-.state-msg.error {
-  color: var(--color-danger);
-}
-
-.summary-row {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.summary-item {
-  flex: 1;
-  min-width: 120px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.summary-item .label {
-  font-size: 12px;
-  color: #6b7a74;
-}
-
-.summary-item .value {
-  font-size: 20px;
-  font-weight: 600;
-}
-
-.value.income {
-  color: var(--color-primary);
-}
-
-.value.expense {
-  color: var(--color-danger);
-}
-
-.chart-wrap {
-  height: 320px;
-  position: relative;
-}
+.chart-box { margin-top: 16px; }
+.chart-wrap { position: relative; height: 320px; }
 </style>

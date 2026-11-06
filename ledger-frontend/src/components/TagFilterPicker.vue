@@ -44,8 +44,8 @@ function clearSelection() {
 </script>
 
 <template>
-  <div class="filter-picker-box">
-    <input v-model="searchQuery" type="text" class="search-input" placeholder="搜尋消費品項…" />
+  <div class="filter-picker-box tags">
+    <input v-model="searchQuery" type="search" class="search-input" placeholder="搜尋消費品項…" />
 
     <div class="option-grid">
       <button type="button" class="option-btn" :class="{ selected: modelValue.length === 0 }" @click="clearSelection">
@@ -100,52 +100,3 @@ function clearSelection() {
     </template>
   </div>
 </template>
-
-<style scoped>
-.filter-picker-box {
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  padding: 10px;
-  background: var(--color-bg);
-}
-.search-input {
-  width: 100%;
-  padding: 6px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 13px;
-  margin-bottom: 8px;
-  box-sizing: border-box;
-}
-.tag-section-label {
-  font-size: 11px;
-  color: #8a948e;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 8px 0 4px;
-}
-.option-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.option-btn {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 13px;
-  cursor: pointer;
-}
-.option-btn.selected {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: #fff;
-  font-weight: 600;
-}
-.no-result {
-  font-size: 12px;
-  color: #6b7a74;
-  margin: 0;
-}
-</style>

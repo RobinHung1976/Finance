@@ -50,14 +50,15 @@ async function handleSubmit() {
   <div class="auth-page">
     <div class="auth-card">
       <BrandBlock />
+      <div class="auth-body">
       <template v-if="!isDone">
         <h1>設定新密碼</h1>
 
         <div v-if="!token" class="error-banner">連結無效，請重新申請忘記密碼</div>
         <div v-else-if="errorMessage" class="error-banner">{{ errorMessage }}</div>
 
-        <form @submit.prevent="handleSubmit">
-          <div class="field">
+        <form class="stack-form" @submit.prevent="handleSubmit">
+          <div class="form-field">
             <label for="new-password">新密碼</label>
             <input
               id="new-password"
@@ -68,7 +69,7 @@ async function handleSubmit() {
               autocomplete="new-password"
             />
           </div>
-          <div class="field">
+          <div class="form-field">
             <label for="confirm-password">確認新密碼</label>
             <input
               id="confirm-password"
@@ -79,7 +80,7 @@ async function handleSubmit() {
               autocomplete="new-password"
             />
           </div>
-          <button class="btn-primary" type="submit" :disabled="isSubmitting || !token">
+          <button class="btn primary block" type="submit" :disabled="isSubmitting || !token">
             {{ isSubmitting ? '處理中…' : '重設密碼' }}
           </button>
         </form>
@@ -89,6 +90,7 @@ async function handleSubmit() {
         <h1>密碼已重設</h1>
         <p class="subtitle">即將導向登入頁…</p>
       </template>
+      </div>
     </div>
   </div>
 </template>

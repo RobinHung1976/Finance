@@ -35,21 +35,22 @@ async function handleSubmit() {
   <div class="auth-page">
     <div class="auth-card">
       <BrandBlock />
+      <div class="auth-body">
       <h1>登入</h1>
       <p class="subtitle">家庭理財網站</p>
 
       <div v-if="errorMessage" class="error-banner">{{ errorMessage }}</div>
 
-      <form @submit.prevent="handleSubmit">
-        <div class="field">
+      <form class="stack-form" @submit.prevent="handleSubmit">
+        <div class="form-field">
           <label for="username">帳號</label>
           <input id="username" v-model="username" type="text" required autocomplete="username" />
         </div>
-        <div class="field">
+        <div class="form-field">
           <label for="password">密碼</label>
           <input id="password" v-model="password" type="password" required autocomplete="current-password" />
         </div>
-        <button class="btn-primary" type="submit" :disabled="isSubmitting">
+        <button class="btn primary block" type="submit" :disabled="isSubmitting">
           {{ isSubmitting ? '登入中…' : '登入' }}
         </button>
       </form>
@@ -62,6 +63,7 @@ async function handleSubmit() {
       </p>
       <!-- TODO(paused): 忘記密碼功能已完成 API + 頁面(ForgotPasswordView/ResetPasswordView),
            待 SMTP 寄信基礎建設驗證穩定後再開放入口連結 -->
+      </div>
     </div>
   </div>
 </template>

@@ -230,8 +230,8 @@ async function saveSearchEdit(id: string) {
 
 <style scoped>
 .panel-head .keypad { padding: 0; }
-.ic-expense { color: #b8391a; }
-.ic-income { color: #1f8a4c; }
+.ic-expense { color: var(--c-expense); }
+.ic-income { color: var(--c-income); }
 .intro { margin: 0 0 10px; }
 .rename { flex-wrap: nowrap; }
 .rename input { flex: 1; min-width: 160px; }
