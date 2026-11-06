@@ -74,6 +74,7 @@
 | `feature-transactions.md` | 交易 CRUD、進階篩選面板 |
 | `feature-stats.md` | 月收支趨勢、分類統計、消費品項排行、待開發項目清單 |
 | `feature-excel-import-export.md` | Excel 匯入/匯出 |
+| `feature-ui-theme.md` | 前端版面(側欄/子路由)、金屬主題、`theme.css` class 用法、改版進度 |
 
 ### Ops
 
@@ -111,6 +112,7 @@
 | `20260810-a9-top-transactions.md` |
 | `20261103-server-rebuild-ssd-failure.md` |
 | `20261104-restore-drill-fix.md` |
+| `20261106-ui-metal-theme-layout.md` |
 
 ### Archive(已整併原始檔,保留回溯)
 
@@ -152,6 +154,13 @@
 **報表匯出(D,依賴 A 圖表穩定)**
 - [ ] D1 統計頁面「匯出」按鈕
 - [ ] D2 PDF 版面
+
+**前端改版(E,見 `features/feature-ui-theme.md`)**
+- [x] E0 Dashboard 分頁改子路由 + 側欄版面 `AppLayout`(2026-11-06)
+- [x] E1 金屬主題 `theme.css` + `style.css` 相容層(2026-11-06)
+- [ ] E2 逐頁清除 inline style/寫死色碼,完成後移除相容層(交易紀錄 → 帳戶 → 分類 → 消費品項 → 匯入匯出)
+- [ ] E3 圖表配色統一(`utils/chartTheme.ts`)
+- [~] 手機版——**擱置**(2026-11-06 決定先取消,如重啟需做抽屜選單或底部導覽列)
 
 **選配 / 未定案**
 - [ ] 重複交易(固定週期)——排入第三期,先不處理

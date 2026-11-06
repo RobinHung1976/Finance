@@ -34,8 +34,8 @@
 | 檔案 | 說明 |
 |---|---|
 | `src/utils/validators.ts` | `validateHouseholdName()`,規則與後端同步 |
-| `src/views/DashboardView.vue` | 標題顯示實際 household 名稱(`onMounted` 呼叫 `fetchMyHousehold()`),API 失敗 fallback 顯示「家庭理財」 |
-| `src/views/MembersView.vue` | 標題旁「編輯」按鈕(僅 admin,inline 編輯);「封存此帳本」按鈕(僅 admin,二次確認);`is_active===false` 時整頁替換為「已封存」畫面;成員列表「刪除」按鈕(僅 admin,不可對自己顯示) |
+| `src/layouts/AppLayout.vue` | 側欄「目前帳本」顯示實際 household 名稱(`onMounted` 呼叫 `fetchMyHousehold()`),API 失敗時顯示「載入中…」不阻斷畫面(原為 `DashboardView.vue` 標題,2026-11-06 改版後該檔已刪除,見 `feature-ui-theme.md`) |
+| `src/views/MembersView.vue` | 標題旁「編輯」按鈕(僅 admin,inline 編輯);「封存此帳本」按鈕(僅 admin,二次確認);`is_active===false` 時整頁替換為「已封存」畫面;成員列表「刪除」按鈕(僅 admin,不可對自己顯示);路由 `/members`,登出與返回首頁由共用版面提供 |
 
 ## 四、CLI 工具:`purge_household.py` + `delete.sh`
 
@@ -54,7 +54,7 @@
 
 ## 六、已知限制 / 後續可考慮
 
-1. 封存/解封目前只在 `MembersView.vue` 生效,若要讓「已封存」狀態鎖住整個 App,需擴充到路由層或 `DashboardView.vue`
+1. 封存/解封目前只在 `MembersView.vue` 生效,若要讓「已封存」狀態鎖住整個 App,需擴充到路由層或 `AppLayout.vue`
 2. `purge_household.py` 目前無備份機制,若需要「先備份再刪」,可在刪除前加匯出 JSON/SQL dump 步驟
 3. 目前僅能刪除 `member` 角色或「非最後一位」管理者,若未來需要轉讓管理者角色後才刪除,需另外設計轉讓流程
 
@@ -65,3 +65,4 @@
 | 2026-07-07 | Dashboard 標題顯示錯誤 household 名稱修復 | `changelog-details/20260707-household-name-fix.md` |
 | 2026-07-07 | 成員刪除功能 | `changelog-details/20260707-session-member-delete.md` |
 | 2026-07-08 | 帳本改名 + 防呆 + 封存/解封 + CLI 刪除 | `changelog-details/20260708-household-management.md` |
+| 2026-11-06 | 前端改版:帳本名稱改在側欄顯示、成員管理頁移入共用版面 | `changelog-details/20261106-ui-metal-theme-layout.md` |

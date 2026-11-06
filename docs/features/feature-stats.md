@@ -8,10 +8,10 @@
 | A2 結餘計算 | 內含在 A1 同一支 API 回應(`total_balance`),未另開 endpoint |
 | A3 分類統計 | Recursive CTE 撈樹 + 金額彙總(`category_id` 需顯式 `str()` 轉換);前端圓餅/甜甜圈圖,固定高度 `320px`(避免 flex 無界延伸)。下鑽某分類(`parent_id` 不為 `None`)時,若該分類本身有直接掛帳(未再歸類到任何子分類)的交易,額外補一項 `is_self=true` 的「`<分類名稱>(直接歸類,未再細分)`」項目(固定灰色 `#9CA3AF`、`has_children=false`),確保下鑽畫面加總 = 頂層總額,不會出現子分類加總對不起來的落差 |
 | 消費品項排行 | `GET /stats/tag-breakdown`;`start_date`/`end_date` 選填,預設今年 1/1 ~ 今天,與 A1/A3 行為一致(`update49.sh` 修正,原本必填、沒帶會 422);`Tag → TransactionTag → Transaction` join + `func.sum`/`func.count` 依金額排序,`limit` 預設 15、上限 50;前端 `TagBreakdownChart.vue`,長條圖(非圓餅圖,因消費品項多對多、加總可能超過支出總額),明確標註「總和不等於支出總額」 |
-| A10 自訂區間統計 | 三個統計子分頁(月收支趨勢/支出分類統計/消費品項排行)共用同一組 `DateRangePicker.vue`,兩個 `<input type="date">` 自由選任意起訖日(無固定選項限制),外加「今年」快捷按鈕回到預設值;後端三支統計 API 皆支援任意 `start_date`/`end_date`。**原本誤列在「尚未開始」,實際上已經做完,純粹是文件沒同步** |
+| A10 自訂區間統計 | 三個統計子分頁(月收支趨勢/支出分類統計/消費品項排行)共用同一組 `DateRangePicker.vue`,兩個 `<input type="date">` 自由選任意起訖日(無固定選項限制),外加 本月/上月/近 3 個月/今年 快選按鈕(目前區間的按鈕呈按下狀態;日期一律以本地時區計算,見 `feature-ui-theme.md` 第四節);後端三支統計 API 皆支援任意 `start_date`/`end_date`。**原本誤列在「尚未開始」,實際上已經做完,純粹是文件沒同步** |
 | A9 最大單筆排行 | `GET /stats/top-transactions`;`start_date`/`end_date`/`type` 選填(預設今年區間+`expense`),`limit` 預設 5、上限 20;直接 join `Account`/`Category` 回傳名稱,不接進階篩選(帳戶/分類/消費品項篩選);前端 `TopTransactionsList.vue`,長條圖列表(排名/分類/帳戶/金額/日期),統計頁第四個子分頁 |
 
-四個統計子分頁(月收支趨勢/支出分類統計/消費品項排行/最大單筆排行)在「統計」tab 下以子分頁切換,共用同一組 `DateRangePicker`。
+四個統計子分頁(月收支趨勢/支出分類統計/消費品項排行/最大單筆排行)位於統計頁 `/stats`(`StatsView.vue`),以 LED 按鍵切換,共用同一組 `DateRangePicker`;子分頁與日期區間存在 Pinia store `statsFilter`,切到其他頁再回來會保留。預設區間今年 1/1 ~ 今天。
 
 ## 二、消費品項排行的設計取捨
 
@@ -48,3 +48,4 @@
 | 2026-07-13 | A3 分類統計下鑽補「本分類直接交易」項目,修正頂層/下鑽 CTE 起點不一致導致金額對不起來的問題 | `changelog-details/20260713-category-breakdown-self-amount.md` |
 | 2026-08-10 | 釐清 A10 自訂區間統計實際已完成(文件先前誤列尚未開始);修正 tag-breakdown 的 start_date/end_date 為選填+預設,與 A1/A3 一致;修正 A1 文件描述的錯誤參數(`months=12` 不存在) | `changelog-details/20260810-a10-clarify-tag-breakdown-fix.md` |
 | 2026-08-10 | A9 最大單筆排行上線,統計頁新增第四個子分頁 | `changelog-details/20260810-a9-top-transactions.md` |
+| 2026-11-06 | 統計頁改為 `/stats` 子路由、子分頁改 LED 按鍵、日期快選增加本月/上月/近 3 個月;修正「今天」UTC 偏移 | `changelog-details/20261106-ui-metal-theme-layout.md` |
