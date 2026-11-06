@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppIcon from './AppIcon.vue'
 import { ref, computed } from 'vue'
 import { createTag } from '@/api/ledgerApi'
 import type { TagOut } from '@/types/ledger'
@@ -21,6 +22,14 @@ const showCreateForm = ref(false)
 const newTagName = ref('')
 const createError = ref('')
 const isCreating = ref(false)
+
+// 開啟新增欄位時,若正在搜尋則直接帶入搜尋字
+function toggleCreateForm() {
+  showCreateForm.value = !showCreateForm.value
+  createError.value = ''
+  const q = searchQuery.value.trim()
+  if (showCreateForm.value && q && !newTagName.value) newTagName.value = q
+}
 
 const isSearching = computed(() => searchQuery.value.trim().length > 0)
 
@@ -111,14 +120,12 @@ async function handleCreate() {
         >
           {{ t.name }}
         </button>
-        <button type="button" class="tag-btn add-btn" @click="showCreateForm = !showCreateForm">
-          + 新增品項
-        </button>
       </div>
     </template>
 
     <template v-else>
       <div class="tag-grid">
+        <span v-if="filteredTags.length === 0" class="no-result">沒有符合「{{ searchQuery }}」的品項</span>
         <button
           v-for="t in filteredTags"
           :key="t.id"
@@ -129,18 +136,26 @@ async function handleCreate() {
         >
           {{ t.name }}
         </button>
-        <button type="button" class="tag-btn add-btn" @click="showCreateForm = !showCreateForm">
-          + 新增品項
-        </button>
       </div>
     </template>
 
-    <form v-if="showCreateForm" class="create-form" @submit.prevent="handleCreate">
-      <input v-model="newTagName" type="text" maxlength="50" placeholder="品項名稱（例如：三媽）" required />
-      <button class="btn primary sm" type="submit" :disabled="isCreating">
-        {{ isCreating ? '新增中…' : '確認' }}
+    <div class="create-row">
+      <button
+        type="button"
+        class="key add-key"
+        :class="{ active: showCreateForm }"
+        :aria-expanded="showCreateForm"
+        @click="toggleCreateForm"
+      >
+        <AppIcon name="plus" />新增品項
       </button>
-    </form>
+      <form v-if="showCreateForm" class="create-form" @submit.prevent="handleCreate">
+        <input v-model="newTagName" type="text" maxlength="50" placeholder="品項名稱(例如:三媽)" aria-label="新品項名稱" required />
+        <button class="btn primary sm" type="submit" :disabled="isCreating">
+          {{ isCreating ? '新增中…' : '確認新增' }}
+        </button>
+      </form>
+    </div>
     <div v-if="createError" class="error-banner">{{ createError }}</div>
   </div>
 </template>

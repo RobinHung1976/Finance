@@ -380,12 +380,16 @@ dialog.modal .panel-head { position: sticky; top: 0; z-index: 1; background: lin
 :is(.category-picker, .tag-picker, .filter-picker-box) .search-result-btn { justify-content: flex-start; text-align: left; }
 :is(.category-picker, .tag-picker, .filter-picker-box) .chevron { color: var(--muted); font-size: 12px; }
 :is(.category-picker, .tag-picker, .filter-picker-box) .selected .chevron { color: rgb(255 255 255 / 80%); }
-:is(.category-picker, .tag-picker) .add-btn {
-  color: var(--accent); text-shadow: none; border-style: dashed; border-color: var(--field-line); background: transparent; box-shadow: none;
+:is(.category-picker, .tag-picker) .create-row {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line);
 }
-:is(.category-picker, .tag-picker) .add-btn:hover { background: rgb(255 255 255 / 70%); }
-:is(.category-picker, .tag-picker) .create-form { display: flex; gap: 8px; margin-top: 10px; }
+/* 新增按鍵:與支出/收入同款的立體按鍵,開啟新增欄位時亮綠燈 */
+:is(.category-picker, .tag-picker) .key.add-key { height: 36px; padding: 0 14px 6px; font-size: 13.5px; color: var(--accent); }
+:is(.category-picker, .tag-picker) .key.add-key::after { left: 10px; right: 10px; bottom: 3px; height: 3px; }
+:is(.category-picker, .tag-picker) .key.add-key .i { width: 16px; height: 16px; stroke-width: 2.6; color: var(--c-income); }
+:is(.category-picker, .tag-picker) .create-form { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 260px; }
 :is(.category-picker, .tag-picker) .create-form input { flex: 1; min-width: 0; }
+:is(.category-picker, .tag-picker) .create-where { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
 :is(.category-picker, .tag-picker) .error-banner { margin: 8px 0 0; }
 :is(.category-picker, .tag-picker, .filter-picker-box) :is(.selected-hint, .no-result) { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); }
 .category-picker .selected-hint.missing { color: var(--bad); }

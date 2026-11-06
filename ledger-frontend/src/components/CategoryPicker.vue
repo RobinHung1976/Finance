@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import AppIcon from './AppIcon.vue'
 import { createCategory } from '@/api/ledgerApi'
 import type { CategoryOut, EntryType } from '@/types/ledger'
 import type { AxiosError } from 'axios'
@@ -88,6 +89,15 @@ function selectFromSearch(category: CategoryOut) {
 }
 
 const showCreateForm = ref(false)
+const currentLevelLabel = computed(() => (path.value.length ? path.value[path.value.length - 1].name : '最上層'))
+
+// 開啟新增欄位時,若正在搜尋且沒有完全同名的分類,直接帶入搜尋字
+function toggleCreateForm() {
+  showCreateForm.value = !showCreateForm.value
+  createError.value = ''
+  const q = searchQuery.value.trim()
+  if (showCreateForm.value && q && !newCategoryName.value) newCategoryName.value = q
+}
 const newCategoryName = ref('')
 const createError = ref('')
 const isCreating = ref(false)
@@ -187,18 +197,34 @@ const selectedCategoryName = computed(
           <span v-if="hasChildren(c.id)" class="chevron">›</span>
         </button>
 
-        <button type="button" class="option-btn add-btn" @click="showCreateForm = !showCreateForm">
-          + 新增分類
-        </button>
       </div>
     </template>
 
-    <form v-if="showCreateForm" class="create-form" @submit.prevent="handleCreate">
-      <input v-model="newCategoryName" type="text" maxlength="100" placeholder="分類名稱" required />
-      <button class="btn primary sm" type="submit" :disabled="isCreating">
-        {{ isCreating ? '新增中…' : '確認' }}
+    <div class="create-row">
+      <button
+        type="button"
+        class="key add-key"
+        :class="{ active: showCreateForm }"
+        :aria-expanded="showCreateForm"
+        @click="toggleCreateForm"
+      >
+        <AppIcon name="plus" />新增分類
       </button>
-    </form>
+      <span v-if="!showCreateForm" class="create-where">加在「{{ currentLevelLabel }}」</span>
+      <form v-else class="create-form" @submit.prevent="handleCreate">
+        <input
+          v-model="newCategoryName"
+          type="text"
+          maxlength="100"
+          :placeholder="`在「${currentLevelLabel}」新增分類`"
+          aria-label="新分類名稱"
+          required
+        />
+        <button class="btn primary sm" type="submit" :disabled="isCreating">
+          {{ isCreating ? '新增中…' : '確認新增' }}
+        </button>
+      </form>
+    </div>
     <div v-if="createError" class="error-banner">{{ createError }}</div>
 
     <template v-if="!hideSelectedHint">
