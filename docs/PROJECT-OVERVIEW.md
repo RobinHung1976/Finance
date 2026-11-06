@@ -113,6 +113,7 @@
 | `20261103-server-rebuild-ssd-failure.md` |
 | `20261104-restore-drill-fix.md` |
 | `20261106-ui-metal-theme-layout.md` |
+| `20261106-transactions-report-view.md` |
 
 ### Archive(已整併原始檔,保留回溯)
 
@@ -147,7 +148,7 @@
 - [ ] B3 預算達成率(依賴 B1 + A1)
 
 **CSV 匯入/匯出(C,獨立模組)**
-- [ ] C1 CSV 匯出
+- [x] C1 CSV 匯出(2026-11-06,交易紀錄頁前端匯出目前查詢結果,見 `features/feature-transactions.md`)
 - [ ] C2 CSV 匯入(格式驗證)
 - [ ] C3 重複資料偵測
 
@@ -158,7 +159,7 @@
 **前端改版(E,見 `features/feature-ui-theme.md`)**
 - [x] E0 Dashboard 分頁改子路由 + 側欄版面 `AppLayout`(2026-11-06)
 - [x] E1 金屬主題 `theme.css` + `style.css` 相容層(2026-11-06)
-- [ ] E2 逐頁清除 inline style/寫死色碼,完成後移除相容層(交易紀錄 → 帳戶 → 分類 → 消費品項 → 匯入匯出)
+- [ ] E2 逐頁清除 inline style/寫死色碼,完成後移除相容層(交易紀錄 ✅ 2026-11-06 → 帳戶 → 分類 → 消費品項 → 匯入匯出)
 - [ ] E3 圖表配色統一(`utils/chartTheme.ts`)
 - [~] 手機版——**擱置**(2026-11-06 決定先取消,如重啟需做抽屜選單或底部導覽列)
 

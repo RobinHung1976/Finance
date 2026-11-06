@@ -4,6 +4,7 @@
 
 ## 2026-11
 
+- 11-06 feat: 交易紀錄頁改為查詢面板 + 報表表格(統計卡片、排序、搜尋、類型篩選),新增/編輯改對話框,匯出 CSV(完成 C1) → [詳情](changelog-details/20261106-transactions-report-view.md)
 - 11-06 feat/fix: 前端金屬主題 + 側欄版面(`AppLayout`),Dashboard 六個分頁改子路由;修正統計頁「今天」在台北 08:00 前變成前一天(`toISOString()` UTC) → [詳情](changelog-details/20261106-ui-metal-theme-layout.md)
 - 11-04 fix: `ledger-backup restore` 讀不到備份檔(postgres 身分無法讀 root 暫存目錄)+ 首次還原演練成功 → [詳情](changelog-details/20261104-restore-drill-fix.md)
 - 11-03 infra: ESXi 主機 SSD 故障導致 FinanceServer VM 與資料庫遺失(無備份);改於 Proxmox VM 205 以 `rebuild-server.sh` 重建(資料庫為空)→ [詳情](changelog-details/20261103-server-rebuild-ssd-failure.md)
