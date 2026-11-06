@@ -12,7 +12,7 @@
 
 | 元件 | 說明 |
 |---|---|
-| `CategoryPicker.vue` | 交易表單用,逐層鑽取 + 搜尋框(不限層級比對名稱,結果顯示完整路徑,最多 30 筆);新增同名分類會被阻擋 |
+| `CategoryPicker.vue` | 交易表單用,逐層鑽取 + 搜尋框(不限層級比對名稱,結果顯示完整路徑,最多 30 筆);新增同名分類會被阻擋。「新增分類」為選項下方獨立一列的立體按鍵,開啟後在右側輸入,並提示加在哪一層;搜尋中開啟會帶入搜尋字 |
 | `CategoryTreeNode.vue` | 遞迴摺疊樹節點,每列含改名/刪除按鈕(inline 編輯,同層重複名稱阻擋),有子分類時顯示數量標籤 |
 | `CategoryList.vue` | 管理頁(`/categories`),支出/收入以 LED 按鍵切換。上半部「建立分類」複用 `CategoryPicker`(`hideSelectedHint=true`,隱藏選取提示,因管理頁用不到選定分類這個功能)。下半部「全部分類」預設樹狀瀏覽;輸入搜尋框後改顯示表格(完整路徑,可就地改名/刪除),清空搜尋恢復樹狀 |
 | `CategoryFilterPicker.vue` | 交易篩選列專用,逐層鑽取麵包屑(比照 `CategoryPicker.vue`)+ 搜尋跨層級跳轉 + 「所有分類」清除按鈕 |
@@ -32,3 +32,4 @@
 | 2026-07-08 | 分類管理頁 UX 改善:搜尋改名/刪除、移除多餘選取提示 | `changelog-details/20260708-category-management-search.md` |
 | 2026-07-10 | 篩選列分類選擇改回逐層鑽取麵包屑(原本嘗試攤開全部,使用者反映太亂) | `changelog-details/20260710-transaction-tag-filter-advanced-search.md` |
 | 2026-11-06 | 分類管理頁改用金屬主題(LED 類型按鍵、樹狀列按鍵、搜尋結果表格) | `changelog-details/20261106-e2-pages-restyle.md` |
+| 2026-11-06 | 「新增分類」改為醒目按鍵並顯示新增層級 | `changelog-details/20261106-add-keys-tags-page.md` |

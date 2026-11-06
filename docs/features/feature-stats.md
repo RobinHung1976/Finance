@@ -21,6 +21,8 @@
 
 彙總類 API 一律在 DB 層用 `group by`/`func.sum`/`func.count` 完成,不把交易全部拉回 Python 迭代(`stats.py`、`tags.py` 的 `usage_count`、`recalc_account_balances.py` 皆遵循同一模式)。
 
+前端圖表配色統一由 `utils/chartTheme.ts` 提供:趨勢圖收入綠/支出紅(`CHART_COLORS`),分類圓餅用 10 色 `CATEGORY_PALETTE`,「直接歸類」固定灰 `#9CA3AF`;消費品項排行、最大單筆排行的長條依收支上色,支出/收入以 LED 小按鍵切換。
+
 ## 四、尚未開始的項目(第二期任務清單延續)
 
 | # | 項目 | 依賴 |
@@ -49,3 +51,4 @@
 | 2026-08-10 | 釐清 A10 自訂區間統計實際已完成(文件先前誤列尚未開始);修正 tag-breakdown 的 start_date/end_date 為選填+預設,與 A1/A3 一致;修正 A1 文件描述的錯誤參數(`months=12` 不存在) | `changelog-details/20260810-a10-clarify-tag-breakdown-fix.md` |
 | 2026-08-10 | A9 最大單筆排行上線,統計頁新增第四個子分頁 | `changelog-details/20260810-a9-top-transactions.md` |
 | 2026-11-06 | 統計頁改為 `/stats` 子路由、子分頁改 LED 按鍵、日期快選增加本月/上月/近 3 個月;修正「今天」UTC 偏移 | `changelog-details/20261106-ui-metal-theme-layout.md` |
+| 2026-11-06 | 圖表配色統一(`chartTheme.ts`),趨勢圖改統計卡片,排行改 LED 收支按鍵 | `changelog-details/20261106-e25-e3-theme-completion.md` |

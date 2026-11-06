@@ -4,6 +4,8 @@
 
 ## 2026-11
 
+- 11-06 feat: 新增分類/品項改為醒目按鍵,消費品項頁版面比照分類頁 → [詳情](changelog-details/20261106-add-keys-tags-page.md)
+- 11-06 feat: 選擇器/統計元件/登入頁改用金屬主題,圖表配色統一(`chartTheme.ts`),移除 `style.css` 相容層(E2.5 + E3) → [詳情](changelog-details/20261106-e25-e3-theme-completion.md)
 - 11-06 feat/fix: 帳戶/分類/消費品項/匯入匯出頁改用金屬主題(表格、LED 按鍵、統計卡片),E2 五頁完成;修正匯入完成後無法重選同一檔案、載入帳戶失敗無提示 → [詳情](changelog-details/20261106-e2-pages-restyle.md)
 - 11-06 feat: 交易紀錄頁改為查詢面板 + 報表表格(統計卡片、排序、搜尋、類型篩選),新增/編輯改對話框,匯出 CSV(完成 C1) → [詳情](changelog-details/20261106-transactions-report-view.md)
 - 11-06 feat/fix: 前端金屬主題 + 側欄版面(`AppLayout`),Dashboard 六個分頁改子路由;修正統計頁「今天」在台北 08:00 前變成前一天(`toISOString()` UTC) → [詳情](changelog-details/20261106-ui-metal-theme-layout.md)
